@@ -1,0 +1,163 @@
+/**
+ * 统一表单组件样式
+ * 覆盖Element Plus默认样式，实现设计系统一致性
+ */
+
+/* ========== 搜索表单字段样式 ========== */
+.search-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.search-field label {
+  font-size: var(--text-sm);
+  color: var(--color-gray-700);
+  font-weight: var(--font-semibold);
+  margin: 0;
+  line-height: var(--line-height-tight);
+  white-space: nowrap;
+}
+
+/* ========== Element Plus 输入框样式覆盖 ========== */
+/* 搜索输入框 */
+.el-input.search-input .el-input__wrapper {
+  height: 42px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-gray-200);
+  transition: var(--transition-normal);
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  padding: 0 var(--spacing-lg);
+}
+
+.el-input.search-input .el-input__wrapper:hover {
+  border-color: var(--color-primary-light);
+  box-shadow: 0 2px 8px var(--color-primary-100);
+}
+
+.el-input.search-input .el-input__wrapper.is-focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-100);
+}
+
+.el-input.search-input .el-input__inner {
+  height: 38px;
+  line-height: 38px;
+  color: var(--color-gray-700);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+}
+
+/* 选择框样式 */
+.el-select.filter-select .el-input {
+  height: 42px;
+}
+
+.el-select.filter-select .el-input__wrapper {
+  height: 42px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-gray-200);
+  transition: var(--transition-normal);
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  padding: 0 var(--spacing-lg);
+}
+
+.el-select.filter-select .el-input__wrapper:hover {
+  border-color: var(--color-primary-light);
+  box-shadow: 0 2px 8px var(--color-primary-100);
+}
+
+.el-select.filter-select .el-input__wrapper.is-focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-100);
+}
+
+.el-select.filter-select .el-input__inner {
+  height: 38px;
+  line-height: 38px;
+  color: var(--color-gray-700);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+}
+
+.el-select.filter-select .el-input__suffix {
+  height: 42px;
+  display: flex;
+  align-items: center;
+}
+
+/* ========== 对话框表单样式 ========== */
+.dialog-form .el-form-item {
+  margin-bottom: var(--spacing-lg);
+}
+
+.dialog-form .el-form-item:last-child {
+  margin-bottom: 0;
+}
+
+.dialog-form .el-form-item__label {
+  font-weight: var(--font-medium);
+  color: var(--color-gray-700);
+  font-size: var(--text-sm);
+  padding-bottom: var(--spacing-xs);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* 对话框输入框 */
+.dialog-form .el-input,
+.dialog-form .el-select,
+.dialog-form .el-input-number {
+  border-radius: var(--radius-md);
+}
+
+.dialog-form .el-input__wrapper,
+.dialog-form .el-textarea__inner {
+  border-radius: var(--radius-md);
+  transition: var(--transition-normal);
+  border: 1px solid var(--color-gray-300);
+}
+
+.dialog-form .el-input__wrapper:hover,
+.dialog-form .el-textarea__inner:hover {
+  border-color: var(--color-primary);
+}
+
+.dialog-form .el-input__wrapper.is-focus,
+.dialog-form .el-textarea__inner:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+/* ========== Placeholder样式统一 ========== */
+.el-input__inner::placeholder {
+  color: var(--color-gray-400) !important;
+  font-size: var(--text-sm);
+  font-weight: var(--font-normal);
+}
+
+/* 确保选中值正常显示 */
+.el-input__inner {
+  color: var(--color-gray-700) !important;
+  opacity: 1 !important;
+}
+
+/* ========== 表单验证样式 ========== */
+.el-form-item.is-error .el-input__wrapper {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px rgba(245, 101, 101, 0.1);
+}
+
+.el-form-item.is-error .el-textarea__inner {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px rgba(245, 101, 101, 0.1);
+}
+
+.el-form-item__error {
+  color: var(--color-danger);
+  font-size: var(--text-xs);
+  margin-top: var(--spacing-xs);
+} 

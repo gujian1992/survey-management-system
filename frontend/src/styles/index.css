@@ -1,0 +1,48 @@
+/**
+ * 全局样式入口文件
+ * 按顺序导入所有基础样式，确保样式层叠的正确性
+ */
+
+/* 1. CSS变量和主题 - 最先加载 */
+@import './base/variables.css';
+
+/* 2. 样式重置和基础样式 */
+@import './base/reset.css';
+
+/* 3. 组件样式 - 按需加载 */
+@import './components/form.css';
+@import './components/button.css';
+@import './components/card.css';
+
+/* 4. Element Plus 样式覆盖 */
+@import './themes/element-plus-override.css';
+
+/* 5. 工具类样式 */
+@import './base/utilities.css';
+
+/**
+ * 全局应用级样式
+ */
+#app {
+  min-height: 100vh;
+  background: var(--gradient-bg);
+}
+
+/* 全局滚动条样式增强 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) var(--color-gray-100);
+}
+
+/* 全局动画性能优化 */
+.animate {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* 无障碍支持增强 */
+.focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+} 

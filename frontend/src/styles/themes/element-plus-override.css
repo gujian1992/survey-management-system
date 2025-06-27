@@ -1,0 +1,86 @@
+/**
+ * Element Plus 样式覆盖
+ * 确保组件库样式与设计系统一致
+ */
+
+/* 对话框样式 */
+.el-dialog {
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-2xl);
+}
+
+.el-dialog__header {
+  background: var(--gradient-primary);
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  padding: var(--spacing-xl) var(--spacing-2xl);
+  border-bottom: none;
+}
+
+.el-dialog__title {
+  color: var(--color-white);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+}
+
+.el-dialog__headerbtn {
+  top: var(--spacing-xl);
+  right: var(--spacing-2xl);
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  transition: var(--transition-normal);
+}
+
+.el-dialog__headerbtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.el-dialog__close {
+  color: var(--color-white);
+  font-size: var(--text-lg);
+}
+
+/* 分页组件样式 */
+.el-pagination {
+  justify-content: center;
+}
+
+.el-pagination .el-pager li {
+  border-radius: var(--radius-md);
+  margin: 0 var(--spacing-xs);
+  transition: var(--transition-normal);
+}
+
+.el-pagination .el-pager li:hover {
+  background: var(--color-primary-50);
+  transform: translateY(-1px);
+}
+
+.el-pagination .el-pager li.is-active {
+  background: var(--gradient-primary);
+  color: var(--color-white);
+}
+
+/* 表格样式增强 */
+.el-table {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.el-table th {
+  background: var(--color-gray-100);
+  font-weight: var(--font-semibold);
+}
+
+.el-table tr:hover > td {
+  background: var(--color-primary-50);
+}
+
+/* 标签样式 */
+.el-tag {
+  border-radius: var(--radius-lg);
+  border: none;
+  font-weight: var(--font-medium);
+} 

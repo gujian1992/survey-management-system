@@ -1,0 +1,32 @@
+/**
+ * 卡片组件样式
+ */
+
+.card {
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-gray-200);
+  transition: var(--transition-normal);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.card__header {
+  padding: var(--spacing-xl);
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.card__body {
+  padding: var(--spacing-xl);
+}
+
+.card__footer {
+  padding: var(--spacing-xl);
+  border-top: 1px solid var(--color-gray-100);
+  background: var(--color-gray-50);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+} 

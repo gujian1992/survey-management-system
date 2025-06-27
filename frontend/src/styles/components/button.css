@@ -1,0 +1,245 @@
+/**
+ * 统一按钮组件样式
+ * 覆盖Element Plus按钮样式，实现设计系统一致性
+ */
+
+/* ========== 基础按钮样式重置 ========== */
+.el-button {
+  font-family: var(--font-family);
+  font-weight: var(--font-semibold);
+  border-radius: var(--radius-md);
+  transition: var(--transition-normal);
+  border: none;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ========== 主要按钮样式 ========== */
+.el-button--primary {
+  background: var(--gradient-primary);
+  color: var(--color-white);
+  box-shadow: var(--shadow-button);
+}
+
+.el-button--primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6c5b7b 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.el-button--primary:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-button);
+}
+
+/* ========== 成功按钮样式 ========== */
+.el-button--success {
+  background: var(--gradient-success);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+}
+
+.el-button--success:hover {
+  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+}
+
+/* ========== 警告按钮样式 ========== */
+.el-button--warning {
+  background: var(--gradient-warning);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.el-button--warning:hover {
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+/* ========== 危险按钮样式 ========== */
+.el-button--danger {
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  color: var(--color-white);
+  box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+}
+
+.el-button--danger:hover {
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
+}
+
+/* ========== 默认按钮样式 ========== */
+.el-button--default {
+  background: var(--color-white);
+  color: var(--color-gray-600);
+  border: 2px solid var(--color-gray-200);
+  box-shadow: var(--shadow-sm);
+}
+
+.el-button--default:hover {
+  background: var(--color-gray-50);
+  color: var(--color-gray-700);
+  border-color: var(--color-gray-300);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ========== 文字按钮样式 ========== */
+.el-button--text {
+  background: transparent;
+  color: var(--color-primary);
+  border: none;
+  box-shadow: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.el-button--text:hover {
+  background: var(--color-primary-50);
+  color: var(--color-primary-dark);
+}
+
+/* ========== 链接按钮样式 ========== */
+.el-button.is-link {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+}
+
+.el-button.is-link:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+/* ========== 按钮尺寸 ========== */
+.el-button--large {
+  padding: var(--spacing-md) var(--spacing-2xl);
+  font-size: var(--text-base);
+  height: 48px;
+}
+
+.el-button--default {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--text-sm);
+  height: 42px;
+}
+
+.el-button--small {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--text-xs);
+  height: 36px;
+}
+
+/* ========== 圆形按钮 ========== */
+.el-button.is-circle {
+  border-radius: var(--radius-full);
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.el-button.is-circle--large {
+  width: 48px;
+  height: 48px;
+}
+
+.el-button.is-circle--small {
+  width: 36px;
+  height: 36px;
+}
+
+/* ========== 加载状态 ========== */
+.el-button.is-loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* ========== 禁用状态 ========== */
+.el-button.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* ========== 特殊按钮类 ========== */
+/* 主操作按钮 - 超高优先级 */
+.el-button.btn-primary,
+.btn-primary.el-button,
+button.btn-primary {
+  background: var(--gradient-primary) !important;
+  border: none !important;
+  border-radius: var(--radius-lg) !important;
+  padding: var(--spacing-md) var(--spacing-2xl) !important;
+  font-weight: var(--font-semibold) !important;
+  font-size: var(--text-sm) !important;
+  color: var(--color-white) !important;
+  box-shadow: var(--shadow-button) !important;
+  transition: var(--transition-normal) !important;
+}
+
+.el-button.btn-primary:hover,
+.btn-primary.el-button:hover,
+button.btn-primary:hover {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4), 0 4px 15px rgba(124, 58, 237, 0.3) !important;
+  border: none !important;
+  color: var(--color-white) !important;
+}
+
+.el-button.btn-primary:active,
+.btn-primary.el-button:active,
+button.btn-primary:active {
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-button) !important;
+  background: var(--gradient-primary) !important;
+  border: none !important;
+  color: var(--color-white) !important;
+}
+
+/* 次要操作按钮 */
+.btn-secondary {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important;
+  border: none !important;
+  border-radius: var(--radius-lg) !important;
+  padding: var(--spacing-md) var(--spacing-2xl) !important;
+  color: var(--color-white) !important;
+  transition: var(--transition-normal) !important;
+  font-weight: var(--font-medium) !important;
+  font-size: var(--text-sm) !important;
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3) !important;
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(107, 114, 128, 0.4) !important;
+  border: none !important;
+  color: var(--color-white) !important;
+}
+
+/* 操作按钮 */
+.btn-action {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-normal);
+  border: none;
+  background: rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+}
+
+.btn-action:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+} 

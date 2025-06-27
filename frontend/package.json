@@ -1,0 +1,24 @@
+{
+  "name": "questionnaire-frontend",
+  "version": "1.0.0",
+  "description": "问卷系统前端",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.1.0",
+    "axios": "^1.4.0",
+    "echarts": "^5.4.2",
+    "element-plus": "^2.3.8",
+    "pinia": "^2.3.1",
+    "vue": "^3.3.4",
+    "vue-echarts": "^6.6.0",
+    "vue-router": "^4.2.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.2.3",
+    "vite": "^4.4.0"
+  }
+}
