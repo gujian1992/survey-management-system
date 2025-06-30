@@ -7,6 +7,8 @@ import lombok.Data;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import java.util.List;
 
 /**
  * 开始答题请求DTO
@@ -15,11 +17,10 @@ import javax.validation.constraints.NotNull;
 @Schema(description = "开始答题请求")
 public class StartAnswerDTO {
     
-    @Schema(description = "题型：1-单选 2-多选 3-填空 4-简答 5-评分 0-混合", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "题型列表：1-单选 2-多选 3-填空 4-简答 5-评分", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "题型不能为空")
-    @Min(value = 0, message = "题型值无效")
-    @Max(value = 5, message = "题型值无效")
-    private Integer questionType;
+    @Size(min = 1, message = "至少选择一种题型")
+    private List<Integer> questionTypes;
     
     @Schema(description = "答题数量", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "答题数量不能为空")

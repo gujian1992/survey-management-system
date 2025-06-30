@@ -1,6 +1,7 @@
 package com.gujian.questionnaire.controller;
 
 import com.gujian.questionnaire.common.Result;
+import com.gujian.questionnaire.common.enums.ErrorCode;
 import com.gujian.questionnaire.service.AnswerSessionService;
 import com.gujian.questionnaire.service.QuestionBankService;
 import com.gujian.questionnaire.service.ScoringService;
@@ -64,7 +65,7 @@ public class StatisticsController {
             
         } catch (Exception e) {
             log.error("获取仪表盘统计数据失败", e);
-            return Result.error("获取统计数据失败");
+            return Result.error(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -34,10 +34,13 @@ const containerClass = computed(() => [
 <style scoped>
 .page-container {
   min-height: 100vh;
+  height: 100vh;
   font-family: var(--font-family);
   position: relative;
   z-index: 1;
-  overflow-x: hidden;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 背景样式 */

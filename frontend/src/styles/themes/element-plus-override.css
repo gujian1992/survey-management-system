@@ -3,6 +3,24 @@
  * 确保组件库样式与设计系统一致
  */
 
+/* 复选框组件样式 */
+.el-checkbox {
+  --el-checkbox-checked-bg-color: var(--el-color-primary);
+  --el-checkbox-checked-input-border-color: var(--el-color-primary);
+  --el-checkbox-checked-text-color: var(--el-color-primary);
+  margin-right: 0;
+}
+
+.el-checkbox__input.is-checked + .el-checkbox__label {
+  color: var(--el-text-color-primary);
+}
+
+.el-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--el-spacing-md);
+}
+
 /* 对话框样式 */
 .el-dialog {
   border-radius: var(--radius-2xl);

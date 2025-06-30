@@ -33,10 +33,45 @@ export const ErrorCode = {
   QUESTION_REQUIRED: 6005,
   INVALID_ANSWER_FORMAT: 6006,
 
+  // 网络错误 (1000-1099)
+  NETWORK_ERROR: 1000,
+  TIMEOUT: 1001,
+  CONNECTION_REFUSED: 1002,
+  DNS_ERROR: 1003,
+
+  // 会话错误 (2000-2099)
+  SESSION_EXPIRED: 2001,
+  SESSION_NOT_FOUND: 2002,
+  SESSION_INVALID: 2003,
+  SESSION_TIMEOUT: 2004,
+
+  // 验证错误 (3000-3099)
+  VALIDATION_ERROR: 3000,
+  REQUIRED_FIELD: 3001,
+  INVALID_FORMAT: 3002,
+  OUT_OF_RANGE: 3003,
+
+  // 业务逻辑错误 (4000-4099)
+  BUSINESS_ERROR: 4000,
+  OPERATION_NOT_ALLOWED: 4001,
+  RESOURCE_LOCKED: 4002,
+  QUOTA_EXCEEDED: 4003,
+
+  // 系统错误 (5000-5099)
+  SYSTEM_ERROR: 5000,
+  SERVICE_UNAVAILABLE: 5001,
+  MAINTENANCE_MODE: 5002,
+  RATE_LIMIT: 5003,
+  BAD_GATEWAY: 5004,
+  GATEWAY_TIMEOUT: 5005,
+
   // 第三方服务错误 (700-799)
   THIRD_PARTY_SERVICE_ERROR: 700,
   API_GATEWAY_ERROR: 701,
-  RPC_SERVICE_ERROR: 702
+  RPC_SERVICE_ERROR: 702,
+
+  // 未知错误
+  UNKNOWN_ERROR: 9999
 }
 
 /**
@@ -66,9 +101,44 @@ export const ErrorMessage = {
   [ErrorCode.QUESTIONNAIRE_ALREADY_SUBMITTED]: '问卷已提交',
   [ErrorCode.QUESTION_REQUIRED]: '必填题目未答',
   [ErrorCode.INVALID_ANSWER_FORMAT]: '答案格式错误',
+
+  // 网络错误消息
+  [ErrorCode.NETWORK_ERROR]: '网络连接失败',
+  [ErrorCode.TIMEOUT]: '请求超时',
+  [ErrorCode.CONNECTION_REFUSED]: '连接被拒绝',
+  [ErrorCode.DNS_ERROR]: 'DNS解析失败',
+
+  // 会话错误消息
+  [ErrorCode.SESSION_EXPIRED]: '会话已过期',
+  [ErrorCode.SESSION_NOT_FOUND]: '会话不存在',
+  [ErrorCode.SESSION_INVALID]: '会话无效',
+  [ErrorCode.SESSION_TIMEOUT]: '会话超时',
+
+  // 验证错误消息
+  [ErrorCode.VALIDATION_ERROR]: '数据验证失败',
+  [ErrorCode.REQUIRED_FIELD]: '必填字段不能为空',
+  [ErrorCode.INVALID_FORMAT]: '数据格式错误',
+  [ErrorCode.OUT_OF_RANGE]: '数据超出范围',
+
+  // 业务逻辑错误消息
+  [ErrorCode.BUSINESS_ERROR]: '业务逻辑错误',
+  [ErrorCode.OPERATION_NOT_ALLOWED]: '操作不被允许',
+  [ErrorCode.RESOURCE_LOCKED]: '资源被锁定',
+  [ErrorCode.QUOTA_EXCEEDED]: '配额已超限',
+
+  // 系统错误消息
+  [ErrorCode.SYSTEM_ERROR]: '系统错误',
+  [ErrorCode.MAINTENANCE_MODE]: '系统维护中',
+  [ErrorCode.RATE_LIMIT]: '请求频率过高',
+  [ErrorCode.BAD_GATEWAY]: '网关错误',
+  [ErrorCode.GATEWAY_TIMEOUT]: '网关超时',
+
   [ErrorCode.THIRD_PARTY_SERVICE_ERROR]: '第三方服务调用失败',
   [ErrorCode.API_GATEWAY_ERROR]: '网关服务异常',
-  [ErrorCode.RPC_SERVICE_ERROR]: 'RPC服务调用失败'
+  [ErrorCode.RPC_SERVICE_ERROR]: 'RPC服务调用失败',
+
+  // 未知错误消息
+  [ErrorCode.UNKNOWN_ERROR]: '未知错误'
 }
 
 /**

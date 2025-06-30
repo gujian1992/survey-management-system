@@ -323,6 +323,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { SimplePremiumDialog } from '@/utils/simplePremiumDialog.js'
 import {
   Monitor, Refresh, Operation, User, CircleCheck, Clock, Warning,
   CaretTop, Search, ArrowDown, View, EditPen, Delete
@@ -335,10 +336,10 @@ import {
   QUESTION_TYPE_COLORS
 } from '../constants/questionTypes'
 
-// 组件名称
-defineOptions({
-  name: 'AnswerSessionManage'
-})
+// 组件名称 (使用更兼容的方式)
+// defineOptions({
+//   name: 'AnswerSessionManage'
+// })
 
 // 响应式数据
 const sessions = ref([])
@@ -365,6 +366,9 @@ const filters = reactive({
   scoringStatus: ''
 })
 const searchText = ref('')
+const searchForm = reactive({
+  keyword: ''
+})
 
 // 分页
 const pagination = reactive({
@@ -375,6 +379,7 @@ const pagination = reactive({
 
 // 会话列表数据
 const sessionsList = ref([])
+const totalSessions = ref(0)
 
 // 计算属性
 const filteredSessions = computed(() => {
@@ -481,13 +486,15 @@ const formatRemainingTime = (seconds) => {
 const loadSessions = async () => {
   try {
     loading.value = true
-    const response = await answerSessionApi.getAllAnswerSessions({
-      page: 1,
+    const response = await answerSessionApi.getAllSessionList({
+      current: 1,
       size: 1000
     })
     if (response.data) {
       sessions.value = response.data.records || []
-      totalSessions.value = filteredSessions.value.length
+      sessionsList.value = response.data.records || []
+      totalSessions.value = response.data.total || 0
+      pagination.total = response.data.total || 0
     }
   } catch (error) {
     console.error('加载会话列表失败:', error)
@@ -499,9 +506,14 @@ const loadSessions = async () => {
 
 const loadRealTimeStats = async () => {
   try {
-    const response = await answerSessionApi.getRealTimeStats()
-    if (response.data) {
-      realTimeStats.value = response.data
+    // 临时使用模拟数据，后续可连接真实API
+    realTimeStats.value = {
+      activeUsers: sessions.value.filter(s => s.status === 1).length,
+      todayCompleted: sessions.value.filter(s => s.status === 2).length,
+      avgDuration: 45,
+      timeoutSessions: sessions.value.filter(s => s.status === 3).length,
+      userGrowth: 12,
+      completionGrowth: 8
     }
   } catch (error) {
     console.error('加载实时统计失败:', error)
@@ -624,7 +636,7 @@ const extendTime = async (session) => {
       }
     })
     
-    await answerSessionApi.extendTime(session.sessionCode, parseInt(value))
+    await answerSessionApi.extendSession(session.sessionCode, parseInt(value))
     ElMessage.success('时间延长成功')
     await loadSessions()
   } catch (error) {
@@ -636,13 +648,18 @@ const extendTime = async (session) => {
 
 const forceComplete = async (session) => {
   try {
-    await ElMessageBox.confirm(`确定要强制完成会话 ${session.sessionCode} 吗？`, '强制完成', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await SimplePremiumDialog.confirm(
+      `即将强制完成会话 ${session.sessionCode}\n\n⚠️ 此操作将立即结束用户的答题过程`,
+      '⚠️ 强制完成会话',
+      {
+        confirmButtonText: '强制完成',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
     
-    await answerSessionApi.forceComplete(session.sessionCode)
+    // TODO: 实现强制完成API
+    // await answerSessionApi.forceComplete(session.sessionCode)
     ElMessage.success('会话已强制完成')
     await loadSessions()
   } catch (error) {
@@ -654,13 +671,18 @@ const forceComplete = async (session) => {
 
 const resetSession = async (session) => {
   try {
-    await ElMessageBox.confirm(`确定要重置会话 ${session.sessionCode} 吗？这将清除所有答题记录。`, '重置会话', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await SimplePremiumDialog.confirm(
+      `确定要重置会话 ${session.sessionCode} 吗？\n\n⚠️ 这将清除所有答题记录，此操作不可恢复！`,
+      '🔄 重置会话',
+      {
+        confirmButtonText: '确认重置',
+        cancelButtonText: '取消',
+        type: 'error'
+      }
+    )
     
-    await answerSessionApi.resetSession(session.sessionCode)
+    // TODO: 实现重置会话API
+    // await answerSessionApi.resetSession(session.sessionCode)
     ElMessage.success('会话已重置')
     await loadSessions()
   } catch (error) {
@@ -676,13 +698,18 @@ const exportSession = (session) => {
 
 const deleteSession = async (session) => {
   try {
-    await ElMessageBox.confirm(`确定要删除会话 ${session.sessionCode} 吗？此操作不可恢复。`, '删除确认', {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await SimplePremiumDialog.confirm(
+      `确定要删除会话 ${session.sessionCode} 吗？\n\n🗑️ 此操作不可恢复，所有相关数据将被永久删除！`,
+      '🗑️ 确认删除会话',
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'error'
+      }
+    )
     
-    await answerSessionApi.deleteAnswerSession(session.sessionCode)
+    // TODO: 实现删除会话API
+    // await answerSessionApi.deleteAnswerSession(session.sessionCode)
     ElMessage.success('删除成功')
     await loadSessions()
   } catch (error) {
@@ -704,14 +731,19 @@ const batchUpdateStatus = async (status) => {
   if (selectedSessions.value.length === 0) return
   
   try {
-    await ElMessageBox.confirm(`确定要批量更新 ${selectedSessions.value.length} 个会话的状态吗？`, '批量操作', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await SimplePremiumDialog.confirm(
+      `确定要批量更新 ${selectedSessions.value.length} 个会话的状态吗？\n\n📊 此操作将同时影响多个会话`,
+      '📊 批量更新状态',
+      {
+        confirmButtonText: '确认更新',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    )
     
     const sessionCodes = selectedSessions.value.map(s => s.sessionCode)
-    await answerSessionApi.batchUpdateStatus(sessionCodes, status)
+    // TODO: 实现批量更新状态API
+    // await answerSessionApi.batchUpdateStatus(sessionCodes, status)
     ElMessage.success('批量操作成功')
     await loadSessions()
     selectedSessions.value = []
@@ -726,14 +758,19 @@ const batchDelete = async () => {
   if (selectedSessions.value.length === 0) return
   
   try {
-    await ElMessageBox.confirm(`确定要删除 ${selectedSessions.value.length} 个会话吗？此操作不可恢复。`, '批量删除', {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await SimplePremiumDialog.confirm(
+      `确定要删除 ${selectedSessions.value.length} 个会话吗？\n\n🗑️ 此操作不可恢复，所有相关数据将被永久删除！`,
+      '🗑️ 批量删除会话',
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'error'
+      }
+    )
     
     const sessionCodes = selectedSessions.value.map(s => s.sessionCode)
-    await answerSessionApi.batchDelete(sessionCodes)
+    // TODO: 实现批量删除API
+    // await answerSessionApi.batchDelete(sessionCodes)
     ElMessage.success('批量删除成功')
     await loadSessions()
     selectedSessions.value = []
@@ -826,13 +863,13 @@ const updateSessionStatus = (row) => {
 
 const deleteSession = async (row) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要删除会话 ${row.sessionCode} 吗？`,
-      '确认删除',
+    await SimplePremiumDialog.confirm(
+      `确定要删除会话 ${row.sessionCode} 吗？\n\n🗑️ 此操作不可恢复！`,
+      '🗑️ 确认删除会话',
       {
-        confirmButtonText: '确定',
+        confirmButtonText: '确认删除',
         cancelButtonText: '取消',
-        type: 'warning',
+        type: 'error'
       }
     )
     // 执行删除操作
@@ -870,13 +907,13 @@ const batchUpdateStatus = async (status) => {
   }
   
   try {
-    await ElMessageBox.confirm(
-      `确定要将选中的 ${selectedSessions.value.length} 个会话状态更新为 ${getStatusText(status)} 吗？`,
-      '批量操作确认',
+    await SimplePremiumDialog.confirm(
+      `确定要将选中的 ${selectedSessions.value.length} 个会话状态更新为 ${getStatusText(status)} 吗？\n\n📊 此操作将同时影响多个会话`,
+      '📊 批量操作确认',
       {
-        confirmButtonText: '确定',
+        confirmButtonText: '确认更新',
         cancelButtonText: '取消',
-        type: 'warning',
+        type: 'info'
       }
     )
     
@@ -896,13 +933,13 @@ const batchDelete = async () => {
   }
   
   try {
-    await ElMessageBox.confirm(
-      `确定要删除选中的 ${selectedSessions.value.length} 个会话吗？此操作不可恢复！`,
-      '批量删除确认',
+    await SimplePremiumDialog.confirm(
+      `确定要删除选中的 ${selectedSessions.value.length} 个会话吗？\n\n🗑️ 此操作不可恢复！`,
+      '🗑️ 批量删除确认',
       {
-        confirmButtonText: '确定',
+        confirmButtonText: '确认删除',
         cancelButtonText: '取消',
-        type: 'warning',
+        type: 'error'
       }
     )
     

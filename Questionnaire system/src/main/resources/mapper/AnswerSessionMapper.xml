@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gujian.questionnaire.mapper.AnswerSessionMapper">
+
+    <!-- 基础列和连接查询片段 -->
+    <sql id="Base_Columns_With_Status">
+        s.*,
+        u.username as userName,
+        CASE s.question_type
+            WHEN 0 THEN '混合'
+            WHEN 1 THEN '单选题'
+            WHEN 2 THEN '多选题'
+            WHEN 3 THEN '判断题'
+            WHEN 4 THEN '简答题'
+            WHEN 5 THEN '编程题'
+            ELSE '未知'
+        END as questionTypeName,
+        CASE s.status
+            WHEN 1 THEN '进行中'
+            WHEN 2 THEN '已完成'
+            WHEN 3 THEN '已超时'
+            WHEN 4 THEN '已放弃'
+            WHEN 5 THEN '异常结束'
+            ELSE '未知'
+        END as statusName,
+        CASE s.scoring_status
+            WHEN 0 THEN '未评分'
+            WHEN 1 THEN '部分评分'
+            WHEN 2 THEN '已评分'
+            ELSE '未知'
+        END as scoringStatusName
+    </sql>
+
+    <!-- 分页查询会话列表 -->
+    <select id="selectSessionPage" resultType="com.gujian.questionnaire.entity.AnswerSession">
+        SELECT
+        <include refid="Base_Columns_With_Status"/>
+        FROM answer_session s
+        LEFT JOIN sys_user u ON s.user_id = u.id
+        WHERE s.deleted = 0
+        <if test="userId != null">
+            AND s.user_id = #{userId}
+        </if>
+        <if test="status != null">
+            AND s.status = #{status}
+        </if>
+        <if test="questionType != null">
+            AND s.question_type = #{questionType}
+        </if>
+        ORDER BY s.create_time DESC
+    </select>
+
+    <!-- 带过滤条件的分页查询 -->
+    <select id="selectSessionPageWithFilters" resultType="com.gujian.questionnaire.entity.AnswerSession">
+        SELECT
+        <include refid="Base_Columns_With_Status"/>
+        FROM answer_session s
+        LEFT JOIN sys_user u ON s.user_id = u.id
+        WHERE s.deleted = 0
+        <if test="userName != null and userName != ''">
+            AND u.username LIKE CONCAT('%', #{userName}, '%')
+        </if>
+        <if test="status != null">
+            AND s.status = #{status}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND s.create_time >= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND s.create_time &lt;= #{endTime}
+        </if>
+        ORDER BY s.create_time DESC
+    </select>
+
+    <!-- 根据会话编码查询会话 -->
+    <select id="selectBySessionCode" resultType="com.gujian.questionnaire.entity.AnswerSession">
+        SELECT
+        <include refid="Base_Columns_With_Status"/>
+        FROM answer_session s
+        LEFT JOIN sys_user u ON s.user_id = u.id
+        WHERE s.session_code = #{sessionCode}
+        AND s.deleted = 0
+    </select>
+
+    <!-- 获取 question_types 字段的原始 JSON 字符串 -->
+    <select id="selectQuestionTypesJson" resultType="java.lang.String">
+        SELECT question_types
+        FROM answer_session
+        WHERE session_code = #{sessionCode}
+          AND deleted = 0
+    </select>
+
+    <!-- 获取用户统计信息 -->
+    <select id="getUserStats" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as totalSessions,
+            SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as completedSessions,
+            SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) as timeoutSessions,
+            SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) as abandonedSessions,
+            ROUND(AVG(CASE WHEN status = 2 THEN final_score ELSE NULL END), 2) as avgScore
+        FROM answer_session
+        WHERE user_id = #{userId}
+          AND deleted = 0
+    </select>
+
+</mapper>

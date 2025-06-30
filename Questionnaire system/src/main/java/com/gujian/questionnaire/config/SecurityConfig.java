@@ -42,41 +42,47 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .authorizeRequests()
                 
-                // ===== 公开访问接口 =====
+                // ===== 🔓 公开访问接口 =====
                 .antMatchers("/swagger-ui/**", "/swagger-ui.html", "/webjars/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
-                .antMatchers("/api/auth/**").permitAll()           // 认证接口 (登录/登出/刷新/会话管理)
-                .antMatchers("/api/test/**").permitAll()           // 测试接口 (开发调试用)
+                .antMatchers("/api/auth/**").permitAll()                        // 认证接口 (登录/登出/注册/会话管理)
+                .antMatchers("/api/test/**").permitAll()                        // 测试接口 (开发调试用)
                 
-                // ===== 题库管理接口 (仅管理员) =====
-                .antMatchers("/api/question-bank/**").hasRole("ADMIN")
+                // ===== 📚 题库相关接口 =====
+                .antMatchers("/api/question-bank/type-stats").authenticated()   // 题型统计信息 (用户+管理员)
+                .antMatchers("/api/question-bank/random").authenticated()       // 随机获取题目 (用户+管理员) 
+                .antMatchers("/api/question-bank/**").hasRole("ADMIN")          // 题库管理 (增删改查、分页等) (仅管理员)
                 
-                // ===== 答题会话管理接口 =====
-                .antMatchers("/api/answer-session/start").authenticated()                    // 开始答题会话 (用户+管理员)
-                .antMatchers("/api/answer-session/my-sessions").authenticated()             // 我的答题会话 (用户+管理员)
-                .antMatchers("/api/answer-session/my-stats").authenticated()                // 我的答题统计 (用户+管理员)
-                .antMatchers(HttpMethod.GET, "/api/answer-session/*").authenticated()       // 获取会话信息 (用户+管理员)
-                .antMatchers("/api/answer-session/*/finish").authenticated()               // 完成答题会话 (用户+管理员)
-                .antMatchers("/api/answer-session/*/abandon").authenticated()              // 放弃答题会话 (用户+管理员)
-                .antMatchers("/api/answer-session/*/check-timeout").authenticated()        // 检查会话超时 (用户+管理员)
-                .antMatchers("/api/answer-session/admin/**").hasRole("ADMIN")              // 管理员会话管理
-                .antMatchers("/api/answer-session/user/*/stats").hasRole("ADMIN")          // 用户统计 (仅管理员)
+                // ===== 📝 答题会话接口 =====
+                .antMatchers("/api/answer-session/start").authenticated()                               // 开始答题会话 (用户+管理员)
+                .antMatchers("/api/answer-session/my-sessions").authenticated()                        // 我的答题会话列表 (用户+管理员)
+                .antMatchers("/api/answer-session/my-stats").authenticated()                           // 我的答题统计 (用户+管理员)
+                .antMatchers(HttpMethod.GET, "/api/answer-session/*").authenticated()                  // 获取会话信息 (用户+管理员)
+                .antMatchers(HttpMethod.POST, "/api/answer-session/*/finish").authenticated()         // 完成答题会话 (用户+管理员)
+                .antMatchers(HttpMethod.POST, "/api/answer-session/*/abandon").authenticated()        // 放弃答题会话 (用户+管理员)
+                .antMatchers("/api/answer-session/*/check-timeout").authenticated()                   // 检查会话超时 (用户+管理员)
+                .antMatchers(HttpMethod.POST, "/api/answer-session/*/extend").hasRole("ADMIN")        // 延长答题时间 (仅管理员)
+                .antMatchers(HttpMethod.POST, "/api/answer-session/*/force-complete").hasRole("ADMIN") // 强制完成会话 (仅管理员)
+                .antMatchers("/api/answer-session/admin/**").hasRole("ADMIN")                         // 管理员会话管理 (仅管理员)
+                .antMatchers("/api/answer-session/user/*/stats").hasRole("ADMIN")                     // 查看用户统计 (仅管理员)
                 
-                // ===== 答题记录接口 =====
-                .antMatchers("/api/answer-record/submit").authenticated()                   // 提交答案 (用户+管理员)
-                .antMatchers("/api/answer-record/next-question/*").authenticated()         // 获取下一题 (用户+管理员)
-                .antMatchers(HttpMethod.GET, "/api/answer-record/*").authenticated()       // 获取记录详情 (用户+管理员)
-                .antMatchers("/api/answer-record/session/*").authenticated()               // 获取会话记录 (用户+管理员)
-                .antMatchers("/api/answer-record/need-scoring").hasRole("ADMIN")           // 需要评分的记录 (仅管理员)
-                .antMatchers("/api/answer-record/batch-auto-score/*").hasRole("ADMIN")     // 批量自动评分 (仅管理员)
+                // ===== 📊 答题记录接口 =====
+                .antMatchers(HttpMethod.POST, "/api/answer-record/submit").authenticated()            // 提交答案 (用户+管理员)
+                .antMatchers(HttpMethod.POST, "/api/answer-record/batch-submit").authenticated()      // 批量提交答案 (用户+管理员)
+                .antMatchers("/api/answer-record/next-question/*").authenticated()                   // 获取下一题 (用户+管理员)
+                .antMatchers("/api/answer-record/session/*/stats").authenticated()                   // 获取会话答题统计 (用户+管理员)
+                .antMatchers(HttpMethod.GET, "/api/answer-record/*").authenticated()                 // 获取记录详情 (用户+管理员)
+                .antMatchers("/api/answer-record/session/*").authenticated()                         // 获取会话记录 (用户+管理员)
+                .antMatchers("/api/answer-record/need-scoring").hasRole("ADMIN")                     // 需要评分的记录 (仅管理员)
+                .antMatchers(HttpMethod.POST, "/api/answer-record/batch-auto-score/*").hasRole("ADMIN") // 批量自动评分 (仅管理员)
                 
-                // ===== 评分管理接口 (仅管理员) =====
-                .antMatchers("/api/scoring/**").hasRole("ADMIN")
+                // ===== 🎯 评分管理接口 (仅管理员) =====
+                .antMatchers("/api/scoring/**").hasRole("ADMIN")                                     // 评分管理 (创建/更新/删除/查询评分记录)
                 
-                // ===== 统计分析接口 (仅管理员) =====
-                .antMatchers("/api/statistics/**").hasRole("ADMIN")
+                // ===== 📈 统计分析接口 (仅管理员) =====
+                .antMatchers("/api/statistics/**").hasRole("ADMIN")                                  // 统计分析 (仪表盘、趋势、报表等)
                 
-                // ===== 兜底规则 =====
-                .anyRequest().authenticated()
+                // ===== 🛡️ 兜底规则 =====
+                .anyRequest().authenticated()                                                        // 其他所有请求都需要认证
                 .and()
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
     }

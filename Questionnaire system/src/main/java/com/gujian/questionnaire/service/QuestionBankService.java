@@ -12,15 +12,40 @@ import java.util.List;
 public interface QuestionBankService extends IService<QuestionBank> {
     
     /**
-     * 分页查询题库
-     */
-    IPage<QuestionBank> getQuestionPage(int current, int size, Integer type, Integer status, 
-                                       Integer difficulty, String keyword);
-    
-    /**
-     * 根据题型随机获取题目
+     * 获取随机题目
      */
     List<QuestionBank> getRandomQuestions(Integer type, Integer count);
+    
+    /**
+     * 从多个题型中获取随机题目
+     */
+    List<QuestionBank> getRandomQuestionsFromTypes(List<Integer> types, Integer count);
+    
+    /**
+     * 获取题库分页列表
+     */
+    IPage<QuestionBank> getQuestionPage(int current, int size, String keyword, Integer type);
+    
+    /**
+     * 获取题型统计
+     */
+    Object getQuestionTypeStats();
+    
+    /**
+     * 批量导入题目
+     */
+    boolean batchImportQuestions(List<QuestionBank> questions);
+    
+    /**
+     * 批量删除题目
+     */
+    boolean batchDeleteQuestions(List<Long> ids);
+    
+    /**
+     * 分页查询题库（包含优先级过滤）
+     */
+    IPage<QuestionBank> getQuestionPage(int current, int size, Integer type, Integer status, 
+                                       Integer difficulty, Integer priority, String keyword);
     
     /**
      * 创建题目
@@ -36,11 +61,6 @@ public interface QuestionBankService extends IService<QuestionBank> {
      * 删除题目（逻辑删除）
      */
     boolean deleteQuestion(Long id);
-    
-    /**
-     * 批量删除题目
-     */
-    boolean batchDeleteQuestions(List<Long> ids);
     
     /**
      * 启用/禁用题目

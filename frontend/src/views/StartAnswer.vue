@@ -1,294 +1,122 @@
 <template>
-  <PageContainer>
-    <PageHeader
-      title="开始答题"
-      description="选择题型和题目数量，开始您的答题练习"
-      icon="Edit"
-    />
-
-    <div class="start-answer-content">
-      <el-row :gutter="30">
-        <!-- 左侧：答题配置 -->
-        <el-col :span="14">
-          <el-card class="config-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <el-icon><Edit /></el-icon>
-                <span>答题设置</span>
-              </div>
-            </template>
-
-            <el-form
-              ref="answerFormRef"
-              :model="answerForm"
-              :rules="answerRules"
-              label-width="120px"
-              size="large"
-            >
-              <el-form-item label="题型选择" prop="questionType">
-                <div class="question-type-grid">
-                  <div
-                    v-for="option in questionTypeOptions"
-                    :key="option.value"
-                    class="type-card"
-                    :class="{ 'selected': answerForm.questionType === option.value }"
-                    @click="selectQuestionType(option.value)"
-                  >
-                    <div class="type-header">
-                      <el-radio
-                        :model-value="answerForm.questionType"
-                        :label="option.value"
-                        @change="handleTypeChange"
-                      >
-                        {{ option.label }}
-                      </el-radio>
-                    </div>
-                    <div class="type-description">
-                      {{ getTypeDescription(option.value) }}
-                    </div>
-                    <div class="type-stats" v-if="questionStats">
-                      <span class="stats-text">
-                        可用题目: {{ getTypeAvailableCount(option.value) }}道
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </el-form-item>
-
-              <el-form-item label="题目数量" prop="totalCount">
-                <div class="count-selection">
-                  <el-select 
-                    v-model="answerForm.totalCount" 
-                    placeholder="请选择答题数量"
-                    size="large"
-                    class="count-select"
-                  >
-                    <el-option
-                      v-for="option in answerCountOptions"
-                      :key="option.value"
-                      :label="option.label"
-                      :value="option.value"
-                      :disabled="option.value > availableCount"
-                    />
-                  </el-select>
-                  <div class="count-hint">
-                    <el-icon><InfoFilled /></el-icon>
-                    建议新手从5-10题开始
-                  </div>
-                </div>
-              </el-form-item>
-
-              <el-form-item label="答题时间" prop="timeoutMinutes">
-                <div class="time-selection">
-                  <el-input-number
-                    v-model="answerForm.timeoutMinutes"
-                    :min="10"
-                    :max="180"
-                    :step="10"
-                    controls-position="right"
-                    size="large"
-                    class="time-input"
-                  />
-                  <span class="time-unit">分钟</span>
-                  <div class="time-hint">
-                    <el-icon><Clock /></el-icon>
-                    建议60分钟
-                  </div>
-                </div>
-              </el-form-item>
-            </el-form>
-
-            <!-- 题库信息展示 -->
-            <div v-if="questionStats" class="question-stats">
-              <h4>当前题库情况</h4>
-              <el-row :gutter="15">
-                <el-col :span="8">
-                  <MetricCard
-                    title="可用题目"
-                    :value="availableCount"
-                    suffix="道"
-                    color="primary"
-                    :trend="availableCount >= answerForm.totalCount ? 'up' : 'down'"
-                  />
-                </el-col>
-                <el-col :span="8">
-                  <MetricCard
-                    title="题目总数"
-                    :value="questionStats.total || 0"
-                    suffix="道"
-                    color="info"
-                  />
-                </el-col>
-                <el-col :span="8">
-                  <MetricCard
-                    title="题型数量"
-                    :value="(questionStats.typeStats || []).length"
-                    suffix="种"
-                    color="warning"
-                  />
-                </el-col>
-              </el-row>
-            </div>
-
-            <!-- 操作按钮 -->
-            <div class="action-buttons">
-              <el-button 
-                type="primary" 
-                size="large" 
-                :loading="startLoading"
-                @click="startAnswer"
-                :disabled="!canStart"
-                class="start-btn"
-              >
-                <el-icon><CaretRight /></el-icon>
-                开始答题
-              </el-button>
-              <el-button 
-                size="large" 
-                @click="previewQuestions"
-                class="preview-btn"
-              >
-                <el-icon><View /></el-icon>
-                预览题目
-              </el-button>
-            </div>
-          </el-card>
-        </el-col>
-
-        <!-- 右侧：我的答题记录和统计 -->
-        <el-col :span="10">
-          <!-- 我的统计 -->
-          <el-card class="stats-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <el-icon><TrendCharts /></el-icon>
-                <span>我的统计</span>
-              </div>
-            </template>
-            <div class="user-stats-grid">
-              <MetricCard
-                title="总答题次数"
-                :value="userStats.totalSessions || 0"
-                suffix="次"
-                color="primary"
-                size="small"
-              />
-              <MetricCard
-                title="完成次数"
-                :value="userStats.completedSessions || 0"
-                suffix="次"
-                color="success"
-                size="small"
-              />
-              <MetricCard
-                title="平均分数"
-                :value="userStats.averageScore || 0"
-                suffix="%"
-                color="warning"
-                size="small"
-              />
-            </div>
-          </el-card>
-
-          <!-- 我的答题记录 -->
-          <el-card class="records-card" shadow="hover" style="margin-top: 20px;">
-            <template #header>
-              <div class="card-header">
-                <el-icon><Clock /></el-icon>
-                <span>最近答题记录</span>
-                <el-button 
-                  text 
-                  type="primary" 
-                  size="small"
-                  @click="$router.push('/my-records')"
-                >
-                  查看更多
-                </el-button>
-              </div>
-            </template>
-
-            <div v-loading="recordsLoading" class="records-content">
-              <div v-if="recentSessions.length === 0" class="empty-records">
-                <el-empty description="暂无答题记录" :image-size="80">
-                  <el-button type="primary" @click="loadRecentSessions">
-                    刷新记录
-                  </el-button>
-                </el-empty>
-              </div>
-              <div v-else class="sessions-list">
-                <div
-                  v-for="session in recentSessions"
-                  :key="session.id"
-                  class="session-item"
-                  @click="viewSession(session)"
-                >
-                  <div class="session-header">
-                    <el-tag 
-                      :color="getQuestionTypeColor(session.questionType)" 
-                      size="small"
-                    >
-                      {{ getQuestionTypeName(session.questionType) }}
-                    </el-tag>
-                    <el-tag 
-                      :type="getSessionStatusType(session.status)" 
-                      size="small"
-                    >
-                      {{ getSessionStatusName(session.status) }}
-                    </el-tag>
-                  </div>
-                  <div class="session-content">
-                    <div class="session-progress">
-                      <div class="progress-info">
-                        <span>进度: {{ session.currentCount }}/{{ session.totalCount }}</span>
-                        <span>得分: {{ session.currentScore || 0 }}分</span>
-                      </div>
-                      <el-progress 
-                        :percentage="Math.round((session.currentCount || 0) / (session.totalCount || 1) * 100)" 
-                        :status="session.status === 2 ? 'success' : session.status === 3 ? 'exception' : ''"
-                        size="small"
-                      />
-                    </div>
-                    <div class="session-time">
-                      {{ formatTime(session.startTime) }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+  <div class="start-answer-page">
+    <div class="page-header">
+      <h1 class="page-title">开始答题</h1>
+      <p class="page-subtitle">选择题型和参数，开始您的学习之旅</p>
     </div>
-  </PageContainer>
+
+    <div class="content-container">
+      <!-- 题型选择 -->
+      <div class="section">
+        <h2 class="section-title">选择题型</h2>
+        <div class="type-grid">
+          <div 
+            v-for="type in questionTypes" 
+            :key="type.id"
+            :class="[
+              'type-item',
+              { 
+                'selected': examConfig.selectedTypes.includes(type.id),
+                'disabled': !type.available
+              }
+            ]"
+            @click="type.available && toggleQuestionType(type.id)"
+          >
+            <div class="type-icon">
+              <el-icon :size="20">
+                <component :is="type.icon" />
+              </el-icon>
+            </div>
+            <div class="type-content">
+              <div class="type-name">{{ type.name }}</div>
+              <div class="type-count">{{ type.count }}题</div>
+            </div>
+            <div class="type-check" v-if="examConfig.selectedTypes.includes(type.id)">
+              <el-icon :size="16"><Check /></el-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 考试设置 -->
+      <div class="section">
+        <h2 class="section-title">考试设置</h2>
+        <div class="settings-row">
+          <div class="setting-item">
+            <label>题目数量</label>
+            <el-select 
+              v-model="examConfig.questionCount" 
+              placeholder="请选择题目数量"
+              :disabled="!examConfig.selectedTypes.length"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="count in availableQuestionCounts"
+                :key="count"
+                :label="`${count}题`"
+                :value="count"
+              />
+            </el-select>
+          </div>
+          <div class="setting-item">
+            <label>考试时长</label>
+            <el-input-number 
+              v-model="examConfig.duration" 
+              :min="15" 
+              :max="180"
+            />
+            <span class="unit">分钟</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 考试须知 -->
+      <!-- <div class="section">
+        <h2 class="section-title">考试须知</h2>
+        <div class="notice-list">
+          <div v-for="(notice, index) in examNotices" :key="index" class="notice-item">
+            {{ index + 1 }}. {{ notice }}
+          </div>
+        </div>
+      </div> -->
+
+      <!-- 开始按钮 -->
+      <div class="action-section">
+        <div class="agreement-container">
+          <el-checkbox v-model="examConfig.agreedToRules" class="agreement">
+            我已阅读并同意遵守上述考试规则
+          </el-checkbox>
+        </div>
+        <div class="button-container">
+          <el-button 
+            type="primary" 
+            size="large"
+            :loading="startLoading"
+            :disabled="!canStart"
+            @click="startExam"
+            class="start-btn"
+          >
+            {{ startLoading ? '正在准备...' : '开始答题' }}
+          </el-button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Check, Select, Edit, Document, Star, CaretRight } from '@element-plus/icons-vue'
+import { answerSessionApi } from '@/api/answerSession'
+import { questionBankApi } from '@/api/questionBank'
 import { 
-  Edit, 
-  CaretRight, 
-  View, 
-  Clock, 
-  TrendCharts,
-  InfoFilled
-} from '@element-plus/icons-vue'
-import PageContainer from '@/components/layout/PageContainer.vue'
-import PageHeader from '@/components/base/PageHeader.vue'
-import MetricCard from '@/components/statistics/MetricCard.vue'
-import { questionBankApi } from '../api/questionBank'
-import { answerSessionApi } from '../api/answerSession'
-import { 
+  QUESTION_TYPES,
   QUESTION_TYPE_OPTIONS,
-  QUESTION_TYPE_NAMES,
-  QUESTION_TYPE_COLORS
-} from '../constants/questionTypes'
-import { 
-  ANSWER_COUNT_OPTIONS,
-  DEFAULT_TIMEOUT_MINUTES
-} from '../constants/answerSession'
-import { formatDateTime } from '@/utils/time'
+  QUESTION_TYPE_NAMES
+} from '@/constants/questionTypes'
+import { ANSWER_COUNT_OPTIONS } from '@/constants/answerSession'
 
 // 组件名称
 defineOptions({
@@ -299,117 +127,115 @@ const router = useRouter()
 
 // 响应式数据
 const startLoading = ref(false)
-const recordsLoading = ref(false)
-const answerFormRef = ref()
-
-// 答题配置表单
-const answerForm = reactive({
-  questionType: 1, // 默认单选题
-  totalCount: 10,  // 默认10题
-  timeoutMinutes: DEFAULT_TIMEOUT_MINUTES || 60
-})
-
-// 表单验证规则
-const answerRules = {
-  questionType: [
-    { required: true, message: '请选择题型', trigger: 'change' }
-  ],
-  totalCount: [
-    { required: true, message: '请选择题目数量', trigger: 'change' }
-  ],
-  timeoutMinutes: [
-    { required: true, message: '请设置答题时间', trigger: 'blur' }
-  ]
-}
-
-// 数据
 const questionStats = ref(null)
-const recentSessions = ref([])
-const userStats = ref({
-  totalSessions: 0,
-  completedSessions: 0,
-  averageScore: 0
+
+const examNotices = [
+  '请确保网络连接稳定，避免考试中断。',
+  '请独立完成考试，不得查阅资料或与他人交流。',
+  '考试过程中请勿刷新或关闭页面。',
+  '系统会自动保存答案，无需手动保存。',
+  '如遇系统问题，请及时与监考老师联系。'
+]
+
+// 题型配置 - 从后端数据动态生成
+const questionTypes = ref([
+  {
+    id: QUESTION_TYPES.SINGLE_CHOICE,
+    name: '单选题',
+    description: '从多个选项中选择一个正确答案',
+    icon: 'Check',
+    count: 0,
+    available: false
+  },
+  {
+    id: QUESTION_TYPES.MULTIPLE_CHOICE,
+    name: '多选题',
+    description: '从多个选项中选择多个正确答案',
+    icon: 'Select',
+    count: 0,
+    available: false
+  },
+  {
+    id: QUESTION_TYPES.FILL_BLANK,
+    name: '填空题',
+    description: '在空白处填写正确答案',
+    icon: 'Edit',
+    count: 0,
+    available: false
+  },
+  {
+    id: QUESTION_TYPES.SHORT_ANSWER,
+    name: '简答题',
+    description: '根据题目要求作答',
+    icon: 'Document',
+    count: 0,
+    available: false
+  },
+  {
+    id: QUESTION_TYPES.RATING,
+    name: '评分题',
+    description: '根据评分标准进行评分',
+    icon: 'Star',
+    count: 0,
+    available: false
+  }
+])
+
+const examConfig = ref({
+  selectedTypes: [], // 选中的题型
+  questionCount: 5,
+  duration: 60,
+  agreedToRules: false
 })
 
 // 计算属性
-const questionTypeOptions = computed(() => 
-  QUESTION_TYPE_OPTIONS.filter(item => item.value !== 0) // 排除混合题型
-)
+const maxQuestions = computed(() => {
+  if (!examConfig.value.selectedTypes.length) return 0
+  return examConfig.value.selectedTypes.reduce((sum, typeId) => {
+    const type = questionTypes.value.find(t => t.id === typeId)
+    return sum + (type?.count || 0)
+  }, 0)
+})
 
-const answerCountOptions = computed(() => ANSWER_COUNT_OPTIONS || [])
-
-const availableCount = computed(() => {
-  if (!questionStats.value || !questionStats.value.typeStats) return 0
-  const typeStats = questionStats.value.typeStats
-  const selectedType = typeStats.find(item => item.type === answerForm.questionType)
-  return selectedType ? selectedType.count : 0
+const availableQuestionCounts = computed(() => {
+  const max = maxQuestions.value
+  if (max === 0) return []
+  
+  const counts = []
+  for (let i = 5; i <= Math.min(max, 50); i += 5) {
+    counts.push(i)
+  }
+  return counts
 })
 
 const canStart = computed(() => {
-  return answerForm.questionType && 
-         answerForm.totalCount && 
-         answerForm.totalCount > 0 &&
-         availableCount.value >= answerForm.totalCount
+  return examConfig.value.selectedTypes.length > 0 && 
+         examConfig.value.questionCount > 0 && 
+         examConfig.value.questionCount <= maxQuestions.value &&
+         examConfig.value.duration >= 15 && 
+         examConfig.value.duration <= 180 &&
+         examConfig.value.agreedToRules
 })
 
-// 工具函数
-const getQuestionTypeName = (type) => QUESTION_TYPE_NAMES[type] || '未知'
-const getQuestionTypeColor = (type) => QUESTION_TYPE_COLORS[type] || '#909399'
-
-const getTypeDescription = (type) => {
-  const descriptions = {
-    1: '从多个选项中选择一个正确答案',
-    2: '从多个选项中选择多个正确答案', 
-    3: '填写空白处的正确内容',
-    4: '用文字回答问题',
-    5: '对题目进行评分或打分'
-  }
-  return descriptions[type] || ''
-}
-
-const getTypeAvailableCount = (type) => {
-  if (!questionStats.value || !questionStats.value.typeStats) return 0
-  const typeStats = questionStats.value.typeStats
-  const selectedType = typeStats.find(item => item.type === type)
-  return selectedType ? selectedType.count : 0
-}
-
-const getSessionStatusType = (status) => {
-  switch (status) {
-    case 1: return '' // 进行中
-    case 2: return 'success' // 已完成
-    case 3: return 'warning' // 已超时
-    case 4: return 'danger' // 已放弃
-    default: return 'info'
-  }
-}
-
-const getSessionStatusName = (status) => {
-  const statusMap = {
-    1: '进行中',
-    2: '已完成',
-    3: '已超时',
-    4: '已放弃'
-  }
-  return statusMap[status] || '未知'
-}
-
-const formatTime = (time) => {
-  if (!time) return '-'
-  try {
-    return formatDateTime(time)
-  } catch (error) {
-    console.error('时间格式化失败:', error)
-    return '-'
-  }
-}
-
 // 方法
+const getTypeIconColor = (type) => {
+  if (!type.available) return '#C0C4CC'
+  if (examConfig.value.selectedTypes.includes(type.id)) return '#409EFF'
+  return '#909399'
+}
+
 const loadQuestionStats = async () => {
   try {
     const response = await questionBankApi.getQuestionTypeStats()
-    if (response && response.data) {
-      questionStats.value = response.data
+    if (response && response.data && response.data.typeStats) {
+      // 更新题型统计数据
+      questionTypes.value.forEach(type => {
+        const stat = response.data.typeStats.find(s => Number(s.type) === type.id)
+        if (stat) {
+          type.count = stat.count
+          type.available = stat.count > 0
+        }
+      })
     }
   } catch (error) {
     console.error('加载题库统计失败:', error)
@@ -417,366 +243,583 @@ const loadQuestionStats = async () => {
   }
 }
 
-const loadRecentSessions = async () => {
-  try {
-    recordsLoading.value = true
-    const response = await answerSessionApi.getMySessionList({
-      current: 1,
-      size: 5
-    })
-    if (response && response.data) {
-      recentSessions.value = response.data.records || []
-      
-      // 计算用户统计
-      const sessions = response.data.records || []
-      userStats.value = {
-        totalSessions: response.data.total || 0,
-        completedSessions: sessions.filter(s => s.status === 2).length,
-        averageScore: sessions.length > 0 
-          ? Math.round(sessions.reduce((sum, s) => sum + (s.finalScore || s.currentScore || 0), 0) / sessions.length)
-          : 0
-      }
-    }
-  } catch (error) {
-    console.error('加载答题记录失败:', error)
-    ElMessage.error('加载答题记录失败')
-  } finally {
-    recordsLoading.value = false
+const toggleQuestionType = (typeId) => {
+  const index = examConfig.value.selectedTypes.indexOf(typeId)
+  if (index === -1) {
+    examConfig.value.selectedTypes.push(typeId)
+  } else {
+    examConfig.value.selectedTypes.splice(index, 1)
   }
 }
 
-const selectQuestionType = (type) => {
-  answerForm.questionType = type
-  handleTypeChange()
-}
-
-const handleTypeChange = () => {
-  // 题型改变时，检查可用题目数量
-  const available = availableCount.value
-  if (available < answerForm.totalCount) {
-    ElMessage.warning(`该题型只有${available}道题目，请调整答题数量`)
-    // 自动调整到最大可用数量
-    const maxCount = Math.min(available, 30)
-    if (maxCount > 0) {
-      answerForm.totalCount = maxCount
-    }
+const startExam = async () => {
+  if (!canStart.value) {
+    ElMessage.warning('请完善考试配置')
+    return
   }
-}
 
-const startAnswer = async () => {
   try {
-    if (!answerFormRef.value) {
-      ElMessage.error('表单初始化失败')
-      return
-    }
-    
-    await answerFormRef.value.validate()
-    
-    if (availableCount.value < answerForm.totalCount) {
-      ElMessage.error('题库中该题型题目不足，请调整答题数量')
-      return
-    }
-
-    await ElMessageBox.confirm(
-      `确定开始答题吗？\n题型：${getQuestionTypeName(answerForm.questionType)}\n数量：${answerForm.totalCount}题\n时间：${answerForm.timeoutMinutes}分钟`,
-      '确认开始答题',
-      {
-        confirmButtonText: '开始',
-        cancelButtonText: '取消',
-        type: 'info'
-      }
-    )
-    
     startLoading.value = true
     
-    const response = await answerSessionApi.startAnswerSession(answerForm)
+    const response = await answerSessionApi.startAnswerSession({
+      questionTypes: examConfig.value.selectedTypes,
+      questionCount: examConfig.value.questionCount,
+      timeoutMinutes: examConfig.value.duration
+    })
+    
     if (response && response.data) {
-      ElMessage.success('答题会话创建成功')
-      // 跳转到答题页面
-      router.push(`/answer/${response.data.sessionCode}`)
+      ElMessage.success('考试开始')
+      router.push(`/answer-session/${response.data.sessionCode}`)
     }
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('开始答题失败:', error)
-      ElMessage.error('开始答题失败')
+    console.error('开始考试失败:', error)
+    
+    // 处理现有会话冲突
+    if (error.response?.data?.code === 6202) { // 存在进行中的会话
+      try {
+        await ElMessageBox.confirm(
+          '检测到您有正在进行的答题会话，是否要放弃当前会话并开始新的答题？',
+          '发现进行中的会话',
+          {
+            confirmButtonText: '放弃并重新开始',
+            cancelButtonText: '继续之前的答题',
+            type: 'warning'
+          }
+        )
+        
+        // 用户选择重新开始，后端会自动处理旧会话
+        const retryResponse = await answerSessionApi.startAnswerSession({
+          questionTypes: examConfig.value.selectedTypes,
+          questionCount: examConfig.value.questionCount,
+          timeoutMinutes: examConfig.value.duration
+        })
+        
+        if (retryResponse && retryResponse.data) {
+          ElMessage.success('新的考试已开始')
+          router.push(`/answer-session/${retryResponse.data.sessionCode}`)
+        }
+      } catch (confirmError) {
+        if (confirmError === 'cancel') {
+          // 用户选择继续之前的答题，跳转到记录页面让用户选择
+          router.push('/my-records')
+        }
+      }
+      return
     }
+    
+    // 题库不足错误
+    if (error.response?.data?.code === 6203) {
+      ElMessage.error('选择的题型中可用题目不足，请调整题目数量或选择其他题型')
+      return
+    }
+    
+    // 网络错误
+    if (!navigator.onLine) {
+      ElMessage.error('网络连接异常，请检查网络后重试')
+      return
+    }
+    
+    // 其他错误
+    const errorMessage = error.response?.data?.message || '开始考试失败，请稍后重试'
+    ElMessage.error(errorMessage)
   } finally {
     startLoading.value = false
   }
 }
 
-const previewQuestions = async () => {
-  try {
-    const response = await questionBankApi.getRandomQuestions(
-      answerForm.questionType, 
-      Math.min(answerForm.totalCount, 5) // 最多预览5题
-    )
-    if (response && response.data) {
-      ElMessage.success(`加载了${response.data.length}道预览题目`)
-    }
-  } catch (error) {
-    console.error('加载预览题目失败:', error)
-    ElMessage.error('加载预览失败')
+// 监听选中题型变化，自动调整题目数量
+watch(() => examConfig.value.selectedTypes, () => {
+  const max = maxQuestions.value
+  if (examConfig.value.questionCount > max && max > 0) {
+    examConfig.value.questionCount = Math.min(max, 20)
   }
-}
-
-const viewSession = (session) => {
-  try {
-    if (session.status === 1) {
-      // 进行中的会话，直接跳转继续答题
-      router.push(`/answer/${session.sessionCode}`)
-    } else {
-      // 已完成的会话，跳转查看详情
-      router.push(`/my-records?sessionId=${session.id}`)
-    }
-  } catch (error) {
-    console.error('跳转失败:', error)
-    ElMessage.error('跳转失败')
-  }
-}
-
-// 监听题型变化
-watch(() => answerForm.questionType, handleTypeChange)
+}, { deep: true })
 
 // 生命周期
-onMounted(async () => {
-  try {
-    await Promise.all([
-      loadQuestionStats(),
-      loadRecentSessions()
-    ])
-  } catch (error) {
-    console.error('页面初始化失败:', error)
-  }
+onMounted(() => {
+  loadQuestionStats()
 })
 </script>
 
 <style scoped>
-.start-answer-content {
-  max-width: 1200px;
+.start-answer-page {
+  max-width: 900px;
   margin: 0 auto;
+  padding: 30px 24px 60px;
+  background: #fafbfc;
+  min-height: 100vh;
 }
 
-.config-card,
-.records-card,
-.stats-card {
-  border-radius: var(--border-radius-lg);
-  border: none;
-  box-shadow: var(--shadow-subtle);
-  transition: all var(--transition-base);
-}
-
-.config-card:hover,
-.records-card:hover,
-.stats-card:hover {
-  box-shadow: var(--shadow-moderate);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-}
-
-.question-type-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
-}
-
-.type-card {
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-lg);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  background: var(--color-bg-elevated);
-}
-
-.type-card:hover {
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-subtle);
-  transform: translateY(-2px);
-}
-
-.type-card.selected {
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
-  box-shadow: var(--shadow-moderate);
-}
-
-.type-header {
-  margin-bottom: var(--spacing-sm);
-}
-
-.type-description {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-sm);
-  line-height: 1.5;
-}
-
-.type-stats {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-}
-
-.count-selection,
-.time-selection {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-}
-
-.count-select,
-.time-input {
-  flex-shrink: 0;
-}
-
-.time-unit {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-}
-
-.count-hint,
-.time-hint {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-}
-
-.question-stats {
-  margin: var(--spacing-xl) 0;
-  padding: var(--spacing-lg);
-  background: var(--color-bg-subtle);
-  border-radius: var(--border-radius-md);
-}
-
-.question-stats h4 {
-  margin: 0 0 var(--spacing-md) 0;
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-medium);
-}
-
-.action-buttons {
-  margin-top: var(--spacing-xl);
+.page-header {
   text-align: center;
-  display: flex;
-  gap: var(--spacing-md);
-  justify-content: center;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e1e5e9;
 }
 
-.start-btn,
-.preview-btn {
-  padding: var(--spacing-md) var(--spacing-xl);
-  border-radius: var(--border-radius-md);
-  font-weight: var(--font-weight-medium);
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
 }
 
-.start-btn {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-  border: none;
+.page-subtitle {
+  font-size: 15px;
+  color: #6c757d;
+  font-weight: 400;
 }
 
-.user-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--spacing-sm);
+.content-container {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 35px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e1e5e9;
 }
 
-.records-content {
-  min-height: 200px;
+.section {
+  margin-bottom: 35px;
 }
 
-.empty-records {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-}
-
-.sessions-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.session-item {
-  padding: var(--spacing-lg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
-  margin-bottom: var(--spacing-md);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  background: var(--color-bg-elevated);
-}
-
-.session-item:hover {
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-subtle);
-  transform: translateY(-1px);
-}
-
-.session-item:last-child {
+.section:last-child {
   margin-bottom: 0;
 }
 
-.session-header {
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.type-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-sm);
+  padding: 20px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  min-height: 70px;
 }
 
-.session-content {
-  margin-top: var(--spacing-md);
+.type-item:hover:not(.disabled) {
+  border-color: #007bff;
+  background: #f8f9ff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 123, 255, 0.1);
 }
 
-.session-progress {
-  margin-bottom: var(--spacing-sm);
+.type-item.selected {
+  border-color: #007bff;
+  background: #f8f9ff;
+  box-shadow: 0 0 0 1px #007bff;
 }
 
-.progress-info {
+.type-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f8f9fa;
+}
+
+.type-icon {
+  margin-right: 14px;
+  color: #6c757d;
+  font-size: 18px;
+}
+
+.type-item.selected .type-icon {
+  color: #007bff;
+}
+
+.type-content {
+  flex: 1;
+}
+
+.type-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 3px;
+}
+
+.type-count {
+  font-size: 13px;
+  color: #6c757d;
+}
+
+.type-check {
+  color: #007bff;
+  font-size: 16px;
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.setting-item {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: var(--spacing-xs);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  min-height: 100px;
+  justify-content: center;
 }
 
-.session-time {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-  text-align: right;
+.setting-item:hover {
+  border-color: #007bff;
+  background: #f8f9ff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 123, 255, 0.1);
 }
 
+.setting-item label {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.unit {
+  margin-left: 8px;
+  font-size: 13px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.setting-item .el-select,
+.setting-item .el-input-number {
+  margin-top: 6px;
+}
+
+.setting-item .el-input-number {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-section {
+  margin-top: 40px !important;
+  padding-top: 30px !important;
+  border-top: 2px solid #f8f9fa;
+  text-align: center;
+}
+
+.agreement-container {
+  margin-bottom: 25px !important;
+  padding: 18px !important;
+  background: #f8f9ff;
+  border-radius: 8px;
+  border: 1px solid #e3f2fd;
+}
+
+.agreement {
+  font-size: 14px !important;
+  color: #495057;
+  font-weight: 500;
+}
+
+.button-container {
+  margin-top: 15px !important;
+}
+
+.start-btn {
+  min-width: 180px !important;
+  height: 46px !important;
+  font-size: 16px !important;
+  font-weight: 600;
+  border-radius: 8px;
+  background: #007bff;
+  border: 2px solid #007bff;
+  color: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 10px rgba(0, 123, 255, 0.2) !important;
+}
+
+.start-btn:hover:not(:disabled) {
+  background: #0056b3;
+  border-color: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 14px rgba(0, 123, 255, 0.3) !important;
+}
+
+.start-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #6c757d;
+  border-color: #6c757d;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Element Plus 组件样式覆盖 */
+:deep(.el-input-number) {
+  width: 100%;
+  max-width: 160px;
+  margin: 0 auto;
+}
+
+:deep(.el-input-number .el-input__inner) {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  height: 40px;
+  background: #ffffff;
+}
+
+:deep(.el-input-number .el-input__inner:focus) {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+:deep(.el-input-number .el-input-number__decrease),
+:deep(.el-input-number .el-input-number__increase) {
+  background: #ffffff;
+  border: 1px solid #ddd;
+  color: #495057;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  margin: 6px;
+}
+
+:deep(.el-input-number .el-input-number__decrease:hover),
+:deep(.el-input-number .el-input-number__increase:hover) {
+  background: #f8f9ff;
+  border-color: #007bff;
+  color: #007bff;
+}
+
+:deep(.el-select) {
+  width: 100%;
+  max-width: 160px;
+  margin: 0 auto;
+}
+
+:deep(.el-select .el-input__inner) {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  height: 40px;
+  text-align: center;
+  background: #ffffff;
+}
+
+:deep(.el-select .el-input__inner:focus) {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+:deep(.el-select-dropdown__item) {
+  font-size: 16px;
+  color: #1a1a1a;
+  text-align: center;
+  font-weight: 500;
+}
+
+:deep(.el-select-dropdown__item.selected) {
+  color: #007bff;
+  background-color: #f8f9ff;
+  font-weight: 600;
+}
+
+:deep(.el-checkbox__label) {
+  font-size: 15px;
+  color: #495057;
+  font-weight: 500;
+}
+
+:deep(.el-checkbox__inner) {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #dee2e6;
+  border-radius: 4px;
+}
+
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner::after) {
+  border-color: #ffffff;
+}
+
+/* 改善设置项的输入框样式 */
+.setting-item :deep(.el-input-number .el-input__inner) {
+  border: 1px solid #ddd !important;
+  height: 40px !important;
+  background: #ffffff !important;
+}
+
+.setting-item :deep(.el-input-number .el-input__inner:focus) {
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1) !important;
+}
+
+.setting-item :deep(.el-select .el-input__inner) {
+  border: 1px solid #ddd !important;
+  height: 40px !important;
+  background: #ffffff !important;
+}
+
+.setting-item :deep(.el-select .el-input__inner:focus) {
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1) !important;
+}
+
+.setting-item :deep(.el-input-number .el-input-number__decrease),
+.setting-item :deep(.el-input-number .el-input-number__increase) {
+  background: #ffffff !important;
+  border: 1px solid #ddd !important;
+  width: 28px !important;
+  height: 28px !important;
+  margin: 6px !important;
+  border-radius: 4px !important;
+}
+
+.setting-item :deep(.el-input-number .el-input-number__decrease:hover),
+.setting-item :deep(.el-input-number .el-input-number__increase:hover) {
+  background: #f8f9ff !important;
+  border-color: #007bff !important;
+  color: #007bff !important;
+}
+
+/* 响应式设计 */
 @media (max-width: 768px) {
-  .start-answer-content .el-col {
-    margin-bottom: var(--spacing-lg);
+  .start-answer-page {
+    padding: 25px 16px 50px;
   }
-  
-  .question-type-grid {
+
+  .content-container {
+    padding: 25px 20px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .page-header {
+    margin-bottom: 30px;
+  }
+
+  .type-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
-  
-  .count-selection,
-  .time-selection {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-  }
-  
-  .user-stats-grid {
+
+  .settings-row {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .setting-item {
+    padding: 18px;
+    min-height: 90px;
+  }
+
+  .start-btn {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .section {
+    margin-bottom: 30px;
+  }
+
+  .action-section {
+    margin-top: 35px !important;
   }
 }
-</style> 
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 22px;
+  }
+  
+  .content-container {
+    padding: 20px 16px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .type-item {
+    padding: 16px;
+    min-height: 60px;
+  }
+
+  .setting-item {
+    padding: 16px;
+    min-height: 80px;
+  }
+}
+
+/* 设置项样式优化 */
+.setting-item :deep(.el-input-number .el-input__inner) {
+  border: 1px solid #ddd !important;
+  height: 40px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.setting-item :deep(.el-input-number .el-input__inner:focus) {
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1) !important;
+}
+
+.setting-item :deep(.el-select .el-input__inner) {
+  border: 1px solid #ddd !important;
+  height: 40px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.setting-item :deep(.el-select .el-input__inner:focus) {
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1) !important;
+}
+
+.setting-item :deep(.el-input-number .el-input-number__decrease),
+.setting-item :deep(.el-input-number .el-input-number__increase) {
+  background: #ffffff !important;
+  border: 1px solid #ddd !important;
+  width: 28px !important;
+  height: 28px !important;
+  margin: 6px !important;
+  border-radius: 4px !important;
+}
+
+.setting-item :deep(.el-input-number .el-input-number__decrease:hover),
+.setting-item :deep(.el-input-number .el-input-number__increase:hover) {
+  background: #f8f9ff !important;
+  border-color: #007bff !important;
+  color: #007bff !important;
+}
+</style>

@@ -9,7 +9,7 @@ import { ErrorCode, getErrorMessage } from '@/constants/errorCode'
  */
 const config = {
   // 基础URL
-  baseURL: process.env.NODE_ENV === 'development' ? 'http://localhost:8080/api' : '/api',
+  baseURL: '/api',
   // 超时时间
   timeout: 10000,
   // 重试次数
@@ -184,22 +184,22 @@ request.interceptors.response.use(
         break
         
       case ErrorCode.FORBIDDEN:
-        ElMessage.error('没有权限访问')
+        config.showError && ElMessage.error('没有权限访问')
         break
         
       case ErrorCode.NOT_FOUND:
         return { ...res, data: null }
         
-              case ErrorCode.QUESTIONNAIRE_NOT_FOUND:
-        case ErrorCode.QUESTIONNAIRE_EXPIRED:
-        case ErrorCode.QUESTIONNAIRE_NOT_PUBLISHED:
-        case ErrorCode.QUESTIONNAIRE_ALREADY_SUBMITTED:
-          ElMessage.warning(getErrorMessage(res.code))
-          break
-          
-        default:
-          // 其他错误码统一处理
-          ElMessage.error(res.message || getErrorMessage(res.code))
+      case ErrorCode.QUESTIONNAIRE_NOT_FOUND:
+      case ErrorCode.QUESTIONNAIRE_EXPIRED:
+      case ErrorCode.QUESTIONNAIRE_NOT_PUBLISHED:
+      case ErrorCode.QUESTIONNAIRE_ALREADY_SUBMITTED:
+        config.showError && ElMessage.warning(getErrorMessage(res.code))
+        break
+        
+      default:
+        // 其他错误码统一处理
+        config.showError && ElMessage.error(res.message || getErrorMessage(res.code))
     }
     
     return Promise.reject(new Error(res.message || '请求失败'))
@@ -222,24 +222,24 @@ request.interceptors.response.use(
           break
           
         case 403:
-          ElMessage.error('没有权限访问')
+          config.showError && ElMessage.error('没有权限访问')
           break
           
         case 404:
-          ElMessage.error('请求的资源不存在')
+          config.showError && ElMessage.error('请求的资源不存在')
           break
           
         case 500:
-          ElMessage.error('服务器内部错误')
+          config.showError && ElMessage.error('服务器内部错误')
           break
           
         default:
-          ElMessage.error('网络错误')
+          config.showError && ElMessage.error('网络错误')
       }
     } else if (error.code === 'ECONNABORTED') {
-      ElMessage.error('请求超时，请重试')
+      config.showError && ElMessage.error('请求超时，请重试')
     } else {
-      ElMessage.error('网络异常，请检查网络连接')
+      config.showError && ElMessage.error('网络异常，请检查网络连接')
     }
     
     return Promise.reject(error)
@@ -259,7 +259,7 @@ const handleUnauthorized = () => {
   // 跳转到登录页
   router.push('/login')
   
-  ElMessage.error('登录已过期，请重新登录')
+  config.showError && ElMessage.error('登录已过期，请重新登录')
 }
 
 // 清除缓存的方法

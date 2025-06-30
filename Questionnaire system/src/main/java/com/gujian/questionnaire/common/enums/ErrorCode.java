@@ -48,14 +48,20 @@ public enum ErrorCode {
     QUESTION_TITLE_EMPTY(6105, "题目标题不能为空"),
     QUESTION_OPTIONS_REQUIRED(6106, "选择题必须设置选项"),
     QUESTION_ANSWER_REQUIRED(6107, "客观题必须设置正确答案"),
+    INVALID_QUESTION_INDEX(6108, "题目索引无效"),
     
     // 会话相关错误 (620-629)
-    SESSION_NOT_FOUND(6201, "答题会话不存在"),
-    SESSION_PERMISSION_DENIED(6202, "无权限操作此会话"),
+    SESSION_NOT_FOUND(6201, "会话不存在"),
+    SESSION_PERMISSION_DENIED(6202, "无权访问此会话"),
     SESSION_ALREADY_FINISHED(6203, "会话已结束"),
     SESSION_TIMEOUT(6204, "会话已超时"),
-    SESSION_IN_PROGRESS(6205, "有正在进行的答题会话"),
+    SESSION_IN_PROGRESS(6205, "会话进行中"),
     SESSION_INSUFFICIENT_QUESTIONS(6206, "题库中可用题目不足"),
+    ANSWER_SESSION_NOT_FOUND(6207, "答题会话不存在"),
+    INVALID_STATUS_TRANSITION(6208, "无效的状态流转"),
+    NO_PERMISSION(6209, "无权限操作"),
+    USER_NOT_LOGIN(6209, "用户未登录"),
+    SESSION_STATUS_ERROR(6210, "获取会话状态失败"),
     
     // 答题相关错误 (630-639)
     ANSWER_RECORD_NOT_FOUND(6301, "答题记录不存在"),
@@ -76,7 +82,17 @@ public enum ErrorCode {
     // 第三方服务错误 (700-799)
     THIRD_PARTY_SERVICE_ERROR(700, "第三方服务调用失败"),
     API_GATEWAY_ERROR(701, "网关服务异常"),
-    RPC_SERVICE_ERROR(702, "RPC服务调用失败");
+    RPC_SERVICE_ERROR(702, "RPC服务调用失败"),
+    
+    /**
+     * 会话不能恢复
+     */
+    SESSION_CANNOT_RESUME(4006, "当前会话状态不允许恢复"),
+    
+    // 题目相关错误 (630-639)
+    QUESTION_ALREADY_ANSWERED(6303, "题目已作答"),
+    QUESTION_NOT_ANSWERED(6304, "题目未作答"),
+    QUESTION_SCORE_ERROR(6305, "题目评分错误");
 
     private final int code;
     private final String message;

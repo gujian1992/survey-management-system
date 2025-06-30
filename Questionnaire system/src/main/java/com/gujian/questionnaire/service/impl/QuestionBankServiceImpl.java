@@ -18,7 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 题库服务实现类
@@ -33,11 +38,13 @@ public class QuestionBankServiceImpl extends ServiceImpl<QuestionBankMapper, Que
     @Autowired
     private ObjectMapper objectMapper;
 
+
+    
     @Override
     public IPage<QuestionBank> getQuestionPage(int current, int size, Integer type, Integer status, 
-                                              Integer difficulty, String keyword) {
+                                              Integer difficulty, Integer priority, String keyword) {
         Page<QuestionBank> page = new Page<>(current, size);
-        IPage<QuestionBank> result = questionBankMapper.selectQuestionPage(page, type, status, difficulty, keyword);
+        IPage<QuestionBank> result = questionBankMapper.selectQuestionPage(page, type, status, difficulty, priority, keyword);
         
         // 处理选项和类型名称
         result.getRecords().forEach(this::processQuestionInfo);
@@ -52,6 +59,21 @@ public class QuestionBankServiceImpl extends ServiceImpl<QuestionBankMapper, Que
         }
         
         List<QuestionBank> questions = questionBankMapper.selectRandomQuestions(type, count);
+        questions.forEach(this::processQuestionInfo);
+        
+        return questions;
+    }
+
+    @Override
+    public List<QuestionBank> getRandomQuestionsFromTypes(List<Integer> types, Integer count) {
+        if (types == null || types.isEmpty() || count == null || count <= 0) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "参数无效");
+        }
+        
+        // 使用新的Mapper方法直接获取随机题目
+        List<QuestionBank> questions = questionBankMapper.selectRandomQuestionsFromTypes(types, count);
+        
+        // 处理题目信息
         questions.forEach(this::processQuestionInfo);
         
         return questions;
@@ -125,6 +147,54 @@ public class QuestionBankServiceImpl extends ServiceImpl<QuestionBankMapper, Que
     public Object getQuestionStats() {
         return questionBankMapper.getQuestionStats();
     }
+    
+    @Override
+    public Object getQuestionTypeStats() {
+        try {
+            // 获取基础统计信息
+            Map<String, Object> basicStats = questionBankMapper.getQuestionStats();
+            
+            // 获取各题型详细统计
+            Map<String, Object> result = new HashMap<>();
+            result.put("total", basicStats.get("total"));
+            
+            // 构建题型统计数组
+            List<Map<String, Object>> typeStats = new ArrayList<>();
+            typeStats.add(createTypeStats(1, basicStats.get("single_choice")));
+            typeStats.add(createTypeStats(2, basicStats.get("multiple_choice")));
+            typeStats.add(createTypeStats(3, basicStats.get("fill_blank")));
+            typeStats.add(createTypeStats(4, basicStats.get("essay")));
+            typeStats.add(createTypeStats(5, basicStats.get("rating")));
+            
+            // 过滤掉数量为0的题型
+            typeStats = typeStats.stream()
+                .filter(stat -> ((Number)stat.get("count")).intValue() > 0)
+                .collect(Collectors.toList());
+            
+            result.put("typeStats", typeStats);
+            
+            log.info("题型统计结果: {}", result);
+            
+            return result;
+        } catch (Exception e) {
+            log.error("获取题型统计失败", e);
+            // 返回默认数据
+            Map<String, Object> result = new HashMap<>();
+            result.put("total", 0);
+            result.put("typeStats", new ArrayList<>());
+            return result;
+        }
+    }
+    
+    /**
+     * 创建题型统计数据
+     */
+    private Map<String, Object> createTypeStats(int type, Object count) {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("type", type);
+        stats.put("count", count == null ? 0 : ((Number)count).intValue());
+        return stats;
+    }
 
     @Override
     public QuestionBank getQuestionDetail(Long id) {
@@ -174,6 +244,16 @@ public class QuestionBankServiceImpl extends ServiceImpl<QuestionBankMapper, Que
             throw new BusinessException(ErrorCode.QUESTION_SCORE_INVALID);
         }
         
+        // 验证优先级字段
+        if (question.getPriority() == null || question.getPriority() < 1 || question.getPriority() > 3) {
+            question.setPriority(2); // 设置默认优先级为中等
+        }
+        
+        // 验证难度字段
+        if (question.getDifficulty() == null || question.getDifficulty() < 1 || question.getDifficulty() > 3) {
+            question.setDifficulty(1); // 设置默认难度为简单
+        }
+        
         // 选择题必须有选项
         if ((question.getType() == 1 || question.getType() == 2 || question.getType() == 5) && 
             !StringUtils.hasText(question.getOptions())) {
@@ -211,5 +291,37 @@ public class QuestionBankServiceImpl extends ServiceImpl<QuestionBankMapper, Que
             case 3: return "困难";
             default: return "未知";
         }
+    }
+
+    @Override
+    public IPage<QuestionBank> getQuestionPage(int current, int size, String keyword, Integer type) {
+        Page<QuestionBank> page = new Page<>(current, size);
+        LambdaQueryWrapper<QuestionBank> queryWrapper = new LambdaQueryWrapper<>();
+        
+        // 添加查询条件
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            queryWrapper.like(QuestionBank::getContent, keyword.trim())
+                       .or()
+                       .like(QuestionBank::getOptions, keyword.trim());
+        }
+        
+        if (type != null) {
+            queryWrapper.eq(QuestionBank::getType, type);
+        }
+        
+        // 按创建时间倒序
+        queryWrapper.orderByDesc(QuestionBank::getCreateTime);
+        
+        return page(page, queryWrapper);
+    }
+    
+    @Override
+    public boolean batchImportQuestions(List<QuestionBank> questions) {
+        if (questions == null || questions.isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "题目列表不能为空");
+        }
+        
+        // 批量保存
+        return saveBatch(questions);
     }
 } 

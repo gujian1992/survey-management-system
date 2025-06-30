@@ -3,11 +3,18 @@ import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
+// 🌏 Element Plus 中文国际化
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+// 先引入 Element Plus 的基础样式
 import 'element-plus/dist/index.css'
+// 再引入主题覆盖样式
+import './styles/themes/element-plus-override.css'
+// 最后引入全局样式系统
+import './styles/index.css'
+
+// 导入 Element Plus 图标
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
-// 引入全局样式系统
-import './styles/index.css'
 import ECharts from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -21,6 +28,15 @@ import {
 
 // 🚀 导入高级按钮增强插件系统 - 安全模式
 import { AdvancedButtonEnhancerPlugin, PRESET_THEMES, ThemeConfig, ENHANCEMENT_STRATEGIES } from '@/plugins/AdvancedButtonEnhancer.js'
+
+// 🎨 导入科技感提示系统
+import { installTechAlert } from '@/utils/techAlert.js'
+
+// 🎨 导入现代化弹出框系统
+import { installModernDialog } from '@/utils/modernDialog.js'
+
+// 🚀 导入企业级弹出框系统
+import { installPremiumDialog } from '@/utils/premiumDialog.js'
 
 use([
   CanvasRenderer,
@@ -42,7 +58,9 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 }
 
 app.component('v-chart', ECharts)
-app.use(ElementPlus)
+app.use(ElementPlus, {
+  locale: zhCn,
+})
 app.use(pinia)
 app.use(router)
 
@@ -106,5 +124,14 @@ if (enhancer) {
 
   console.log('[Main] 高级按钮增强系统初始化完成（安全模式）')
 }
+
+// 🎨 安装科技感提示系统
+installTechAlert(app)
+
+// 🎨 安装现代化弹出框系统
+installModernDialog(app)
+
+// 🚀 安装企业级弹出框系统
+installPremiumDialog(app)
 
 app.mount('#app') 

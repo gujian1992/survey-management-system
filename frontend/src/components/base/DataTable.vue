@@ -32,10 +32,8 @@
         class="modern-table"
         :header-cell-style="headerCellStyle"
         :row-class-name="getRowClassName"
-        :max-height="null"
-        :height="null"
-        :scrollbar-always-on="false"
-        table-layout="auto"
+        :height="400"
+        table-layout="fixed"
         style="width: 100%"
       >
         <slot></slot>
@@ -214,8 +212,6 @@ defineExpose({
   border: 1px solid rgba(255, 255, 255, 0.3);
   position: relative;
   z-index: var(--z-dropdown);
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .data-table-container::before {
@@ -313,32 +309,118 @@ defineExpose({
 /* 🔮 科技感表格包装器 */
 .table-wrapper {
   border-radius: 20px;
-  overflow: hidden;
   border: 1px solid rgba(102, 126, 234, 0.1);
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.9) 100%);
   backdrop-filter: blur(10px);
   box-shadow: 
     0 8px 24px rgba(0, 0, 0, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  margin-bottom: 20px;
 }
 
 /* ✨ 现代化表格样式 */
 :deep(.modern-table) {
   border-radius: 20px;
-  overflow: visible;
+  background: transparent;
+  width: 100% !important;
+  table-layout: fixed;
+}
+
+/* 设置列宽 */
+:deep(.modern-table .el-table__cell[data-col-index="0"]) {
+  width: 280px !important;
+}
+
+:deep(.modern-table .el-table__cell[data-col-index="1"]) {
+  width: 120px !important;
+}
+
+:deep(.modern-table .el-table__cell[data-col-index="2"]) {
+  width: 100px !important;
+}
+
+:deep(.modern-table .el-table__cell[data-col-index="3"]) {
+  width: 80px !important;
+}
+
+:deep(.modern-table .el-table__cell[data-col-index="4"]) {
+  width: 100px !important;
+}
+
+:deep(.modern-table .el-table__cell[data-col-index="5"]) {
+  width: 180px !important;
+}
+
+:deep(.modern-table .el-table__cell[data-col-index="6"]) {
+  width: 100px !important;
+}
+
+/* 表格基础样式 */
+:deep(.modern-table) {
+  border-radius: 20px;
   background: transparent;
 }
 
-/* 彻底移除表格内部滚动条，提升美观度 */
-:deep(.modern-table .el-table__body-wrapper) {
-  overflow: visible !important; /* 强制移除内部垂直滚动 */
-  overflow-x: visible !important; /* 强制移除内部水平滚动 */
-  max-height: none !important; /* 移除最大高度限制 */
+/* 表格基础样式 */
+:deep(.modern-table) {
+  border-radius: 20px;
+  background: transparent;
 }
 
-:deep(.modern-table .el-table__header-wrapper) {
-  overflow: visible !important;
-  overflow-x: visible !important;
+/* 简单有效的解决方案 */
+:deep(.modern-table) {
+  border-radius: 20px;
+  background: transparent;
+}
+
+/* Element Plus 2.x 终极双滚动条解决方案 */
+
+/* 完全禁用Element Plus的scrollbar组件 */
+:deep(.el-table .el-scrollbar__bar.is-vertical) {
+  right: -20px !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  z-index: -1 !important;
+}
+
+:deep(.el-table .el-scrollbar__bar.is-horizontal) {
+  bottom: -20px !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  z-index: -1 !important;
+}
+
+/* 强制隐藏所有scrollbar相关元素 */
+:deep(.el-scrollbar__bar) {
+  display: none !important;
+}
+
+:deep(.el-scrollbar__thumb) {
+  display: none !important;
+}
+
+/* 确保表格主体使用原生滚动 */
+:deep(.el-table__body-wrapper) {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* 完全移除固定列的滚动相关元素 */
+:deep(.el-table__fixed),
+:deep(.el-table__fixed-right) {
+  z-index: 3 !important;
+}
+
+:deep(.el-table__fixed .el-scrollbar__bar),
+:deep(.el-table__fixed-right .el-scrollbar__bar) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+:deep(.el-table__fixed .el-table__body-wrapper),
+:deep(.el-table__fixed-right .el-table__body-wrapper) {
+  overflow: hidden !important;
 }
 
 /* 确保表格内容完整显示 */
@@ -363,52 +445,36 @@ defineExpose({
   max-height: none !important;
 }
 
-/* 移除所有可能的滚动条 */
-:deep(.modern-table .el-scrollbar) {
-  overflow: visible !important;
-}
-
-:deep(.modern-table .el-scrollbar__wrap) {
-  overflow: visible !important;
-  max-height: none !important;
-}
-
-:deep(.modern-table .el-scrollbar__view) {
-  overflow: visible !important;
-}
-
-/* 彻底移除Element Plus表格的所有滚动条 */
+/* 表格和滚动条样式 */
 :deep(.modern-table) {
-  overflow: visible !important;
+  border-radius: 20px;
+  overflow: hidden;
 }
 
-:deep(.modern-table *) {
-  overflow: visible !important;
-  max-height: none !important;
+:deep(.el-scrollbar__wrap) {
+  overflow-x: hidden;
 }
 
-/* 移除表格容器的滚动条 */
-:deep(.modern-table .el-table) {
-  overflow: visible !important;
+:deep(.el-table__body-wrapper) {
+  overflow-x: hidden !important;
 }
 
-:deep(.modern-table .el-table__inner-wrapper) {
-  overflow: visible !important;
+:deep(.el-table__header-wrapper) {
+  overflow: hidden;
 }
 
-/* 确保表格适应内容高度 */
-:deep(.modern-table.el-table--scrollable-x) {
-  overflow-x: visible !important;
+/* 自定义滚动条样式 */
+:deep(.el-table__body-wrapper::-webkit-scrollbar) {
+  width: 6px;
 }
 
-:deep(.modern-table.el-table--scrollable-y) {
-  overflow-y: visible !important;
+:deep(.el-table__body-wrapper::-webkit-scrollbar-thumb) {
+  background: rgba(102, 126, 234, 0.2);
+  border-radius: 3px;
 }
 
-/* 移除虚拟滚动相关的滚动条 */
-:deep(.modern-table .el-table__empty-block),
-:deep(.modern-table .el-table__append-wrapper) {
-  overflow: visible !important;
+:deep(.el-table__body-wrapper::-webkit-scrollbar-track) {
+  background: transparent;
 }
 
 :deep(.modern-table .el-table__header) {
@@ -442,9 +508,12 @@ defineExpose({
 }
 
 :deep(.modern-table .el-table__row td) {
-  border: none;
-  padding: 20px 16px;
+  padding: 16px;
+  line-height: 1.6;
+  height: 60px;
   border-bottom: 1px solid rgba(102, 126, 234, 0.08);
+  color: #1a202c;
+  font-size: 14px;
 }
 
 :deep(.modern-table .even-row) {
@@ -497,35 +566,18 @@ defineExpose({
   }
 }
 
-/* 最强优先级：彻底隐藏所有滚动条 */
-:deep(.data-table-container) {
-  overflow: visible !important;
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-:deep(.data-table-container *) {
-  overflow: visible !important;
-  max-height: none !important;
-}
-
-/* 专门针对Element Plus的滚动条组件 */
-:deep(.el-scrollbar__bar) {
-  display: none !important;
-}
-
-:deep(.el-scrollbar__thumb) {
-  display: none !important;
-}
-
-:deep(.el-table .el-scrollbar__bar) {
-  display: none !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-}
-
-/* 强制移除所有Element UI的滚动相关类 */
-:deep(.el-table--scrollable-x .el-table__body-wrapper),
-:deep(.el-table--scrollable-y .el-table__body-wrapper) {
-  overflow: visible !important;
+.modern-pagination {
+  background: transparent;
 }
 
 /* 修复表格选择框对齐问题 */

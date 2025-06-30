@@ -30,7 +30,7 @@ public class QuestionBank {
     @Schema(description = "题型：1-单选 2-多选 3-填空 4-简答 5-评分", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer type;
     
-    @Schema(description = "题目内容详细描述")
+    @Schema(description = "题目描述详细说明")
     private String content;
     
     @Schema(description = "选项内容（JSON格式，适用于选择题）")

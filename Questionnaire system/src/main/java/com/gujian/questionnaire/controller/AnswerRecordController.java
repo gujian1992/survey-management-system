@@ -2,6 +2,7 @@ package com.gujian.questionnaire.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.gujian.questionnaire.common.Result;
+import com.gujian.questionnaire.dto.BatchSubmitAnswerDTO;
 import com.gujian.questionnaire.dto.SubmitAnswerDTO;
 import com.gujian.questionnaire.entity.AnswerRecord;
 import com.gujian.questionnaire.entity.QuestionBank;
@@ -27,9 +28,16 @@ import java.util.List;
 @RequestMapping("/api/answer-record")
 @Tag(name = "答题记录管理")
 public class AnswerRecordController {
-
     @Autowired
-    private AnswerRecordService answerRecordService;
+    private  AnswerRecordService answerRecordService;
+
+    @PostMapping("/batch-submit")
+    @Operation(summary = "批量提交答案")
+    public Result<List<AnswerRecord>> batchSubmitAnswers(@Valid @RequestBody BatchSubmitAnswerDTO batchSubmitDTO,
+                                                        @AuthenticationPrincipal User currentUser) {
+        List<AnswerRecord> records = answerRecordService.batchSubmitAnswers(batchSubmitDTO, currentUser.getId());
+        return Result.success(records);
+    }
 
     @PostMapping("/submit")
     @Operation(summary = "提交答案")

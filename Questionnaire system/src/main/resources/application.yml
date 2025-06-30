@@ -2,11 +2,16 @@ app:
     jwt:
         expiration: 86400000
         secret: dGhpcyBpcyBhIHZlcnkgc2VjdXJlIGFuZCBsb25nIEpXVCBzZWNyZXQga2V5IGZvciBxdWVzdGlvbm5haXJlIHN5c3RlbUFuZEl0SXNFeGFjdGx5VGhpcnR5VHdvQnl0ZXNMb25nRm9yU2VjdXJpdHk=
+    # 定时任务配置
+    scheduling:
+        enabled: true  # 是否启用定时任务，默认启用
+        timeout-check-interval: 300000  # 超时检查间隔（毫秒），默认5分钟
 cors:
     allowed-headers: '*'
     allowed-methods: '*'
     allowed-origins: '*'
 mybatis-plus:
+    mapper-locations: classpath:mapper/*.xml
     configuration:
         log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
         map-underscore-to-camel-case: true

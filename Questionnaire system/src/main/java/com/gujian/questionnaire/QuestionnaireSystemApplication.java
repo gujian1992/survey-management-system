@@ -9,7 +9,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@MapperScan("com.gujian.questionnaire.mapper")
 @EnableScheduling
 public class QuestionnaireSystemApplication implements CommandLineRunner {
 

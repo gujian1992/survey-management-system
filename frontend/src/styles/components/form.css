@@ -160,4 +160,63 @@
   color: var(--color-danger);
   font-size: var(--text-xs);
   margin-top: var(--spacing-xs);
+}
+
+/* 离开确认对话框样式 */
+.warning-dialog .el-message-box {
+  border-left: 4px solid #f56c6c;
+}
+
+.warning-dialog .el-message-box__title {
+  color: #f56c6c;
+  font-weight: 600;
+}
+
+.warning-dialog .el-message-box__content {
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.default-dialog .el-message-box {
+  border-left: 4px solid #409eff;
+}
+
+.default-dialog .el-message-box__title {
+  color: #409eff;
+  font-weight: 600;
+}
+
+.default-dialog .el-message-box__content {
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+/* 考试警告对话框样式 */
+.exam-warning-dialog .el-message-box {
+  border-left: 6px solid #e6a23c;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.exam-warning-dialog .el-message-box__title {
+  color: #e6a23c;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.exam-warning-dialog .el-message-box__content {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #303133;
+}
+
+.exam-warning-dialog .el-button--primary {
+  background-color: #f56c6c;
+  border-color: #f56c6c;
+}
+
+.exam-warning-dialog .el-button--primary:hover {
+  background-color: #f78989;
+  border-color: #f78989;
 } 

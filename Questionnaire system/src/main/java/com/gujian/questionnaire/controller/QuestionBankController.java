@@ -38,9 +38,16 @@ public class QuestionBankController {
             @Parameter(description = "题型") @RequestParam(required = false) Integer type,
             @Parameter(description = "状态") @RequestParam(required = false) Integer status,
             @Parameter(description = "难度") @RequestParam(required = false) Integer difficulty,
+            @Parameter(description = "优先级") @RequestParam(required = false) Integer priority,
             @Parameter(description = "关键词") @RequestParam(required = false) String keyword) {
         
-        IPage<QuestionBank> result = questionBankService.getQuestionPage(current, size, type, status, difficulty, keyword);
+        log.info("题库分页查询参数: current={}, size={}, type={}, status={}, difficulty={}, priority={}, keyword={}", 
+                current, size, type, status, difficulty, priority, keyword);
+        
+        IPage<QuestionBank> result = questionBankService.getQuestionPage(current, size, type, status, difficulty, priority, keyword);
+        
+        log.info("查询结果: 总数={}, 当前页数据量={}", result.getTotal(), result.getRecords().size());
+        
         return Result.success(result);
     }
 
@@ -102,6 +109,13 @@ public class QuestionBankController {
     @PreAuthorize("hasRole('ADMIN')")
     public Result<Object> getQuestionStats() {
         Object stats = questionBankService.getQuestionStats();
+        return Result.success(stats);
+    }
+    
+    @GetMapping("/type-stats")
+    @Operation(summary = "获取题型统计信息")
+    public Result<Object> getQuestionTypeStats() {
+        Object stats = questionBankService.getQuestionTypeStats();
         return Result.success(stats);
     }
 

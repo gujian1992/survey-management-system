@@ -33,7 +33,7 @@ public class AnswerRecord {
     @Schema(description = "题型", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer questionType;
     
-    @Schema(description = "题目内容快照（防止题目被修改影响记录）")
+    @Schema(description = "题目描述快照（防止题目被修改影响记录）")
     private String questionContent;
     
     @Schema(description = "题目选项快照")

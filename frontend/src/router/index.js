@@ -14,17 +14,19 @@ const ScoringManage = () => import('../views/ScoringManage.vue')
 const Statistics = () => import('../views/Statistics.vue')
 
 // 新系统页面 - 用户
-const StartAnswer = () => import('../views/StartAnswer.vue')
+const StartAnswer = () => {
+  console.log('正在加载StartAnswer组件...')
+  return import('../views/StartAnswer.vue').then(module => {
+    console.log('StartAnswer组件加载成功')
+    return module
+  }).catch(error => {
+    console.error('StartAnswer组件加载失败:', error)
+    throw error
+  })
+}
 const AnswerQuestion = () => import('../views/AnswerQuestion.vue')
-
-
-// 旧系统页面（保留备用）
-const QuestionnaireList = () => import('../views/QuestionnaireList.vue')
-const QuestionnaireCreate = () => import('../views/QuestionnaireCreate.vue')
-const QuestionnaireEdit = () => import('../views/QuestionnaireEdit.vue')
-const QuestionnairePreview = () => import('../views/QuestionnairePreview.vue')
-const QuestionnaireFill = () => import('../views/QuestionnaireFill.vue')
-const MyResponses = () => import('../views/MyResponses.vue')
+const MyAnswerRecords = () => import('../views/MyAnswerRecords.vue')
+const SystemUpgrade = () => import('../views/SystemUpgrade.vue')
 
 const routes = [
   {
@@ -78,83 +80,61 @@ const routes = [
     meta: { requiresAuth: true, role: 'USER', keepAlive: true }
   },
   {
-    path: '/answer/:sessionCode',
+    path: '/answer-session/:sessionCode',
     name: 'AnswerQuestion',
     component: AnswerQuestion,
     meta: { requiresAuth: true, role: 'USER' }
   },
+  {
+    path: '/my-records',
+    name: 'MyRecords',
+    component: MyAnswerRecords,
+    meta: { requiresAuth: true, role: 'USER', keepAlive: true }
+  },
 
   
-  // 旧系统路由（保留备用）
+  // 系统升级页面
+  {
+    path: '/system-upgrade',
+    name: 'SystemUpgrade',
+    component: SystemUpgrade,
+    meta: { requiresAuth: true }
+  },
+  
+  // 旧系统路由重定向
   {
     path: '/questionnaire',
-    name: 'QuestionnaireList',
-    component: QuestionnaireList,
-    meta: { requiresAuth: true, role: 'ADMIN', keepAlive: true }
+    redirect: '/system-upgrade'
   },
   {
     path: '/questionnaire/create',
-    name: 'QuestionnaireCreate',
-    component: QuestionnaireCreate,
-    meta: { requiresAuth: true, role: 'ADMIN' }
+    redirect: '/system-upgrade'
   },
   {
     path: '/questionnaire/edit/:id',
-    name: 'QuestionnaireEdit',
-    component: QuestionnaireEdit,
-    meta: { requiresAuth: true, role: 'ADMIN' }
+    redirect: '/system-upgrade'
   },
   {
     path: '/questionnaire/preview/:id',
-    name: 'QuestionnairePreview',
-    component: QuestionnairePreview,
-    meta: { requiresAuth: true, role: 'ADMIN' }
+    redirect: '/system-upgrade'
   },
   {
     path: '/questionnaire-records',
-    name: 'QuestionnaireRecords',
-    component: () => import('../views/QuestionnaireRecords.vue'),
-    meta: { requiresAuth: true, role: 'ADMIN', keepAlive: true }
+    redirect: '/system-upgrade'
   },
   {
     path: '/questionnaire-fill',
-    name: 'QuestionnaireFill',
-    component: QuestionnaireFill,
-    meta: { requiresAuth: true, role: 'USER' }
+    redirect: '/system-upgrade'
   },
   {
     path: '/my-responses',
-    name: 'MyResponses',
-    component: MyResponses,
-    meta: { requiresAuth: true, role: 'USER' }
+    redirect: '/system-upgrade'
   },
   {
     path: '/questionnaire/fill/:id',
-    name: 'QuestionnaireAnswer',
-    component: () => import('../views/QuestionnaireAnswer.vue'),
-    meta: { requiresAuth: true }
+    redirect: '/system-upgrade'
   },
-  {
-    path: '/api-test',
-    name: 'ApiTest',
-    component: () => import('../views/ApiTest.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/hover-test',
-    name: 'HoverTest',
-    component: () => import('../views/HoverTest.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
-    path: '/button-showcase',
-    name: 'ButtonShowcase',
-    component: () => import('../views/ButtonShowcase.vue'),
-    meta: { 
-      requiresAuth: false,
-      title: '按钮增强插件演示'
-    }
-  }
+
 
 ]
 
@@ -175,23 +155,32 @@ router.beforeEach(async (to, from, next) => {
     beforePageLeave(from, to)
   }
   
-  // 初始化用户状态
+  // 如果是登录页面，直接通过
+  if (to.path === '/login') {
+    // 如果已登录且有用户信息，重定向到首页
+    if (userStore.isLoggedIn && userStore.userInfo) {
+      next(userStore.isAdmin ? '/dashboard' : '/start-answer')
+      return
+    }
+    next()
+    return
+  }
+  
+  // 初始化用户状态（仅在有token且没有用户信息时）
   if (userStore.token && !userStore.userInfo) {
     try {
       await userStore.initUserState()
     } catch (error) {
       console.error('初始化用户状态失败:', error)
+      // 如果初始化失败，清除状态并跳转到登录页
+      await userStore.logout()
+      next('/login')
+      return
     }
   }
   
   // 处理根路径重定向
-  if (to.path === '/' && userStore.isLoggedIn) {
-    next(userStore.isAdmin ? '/dashboard' : '/start-answer')
-    return
-  }
-  
-  // 如果访问登录页且已登录，重定向到首页
-  if (to.path === '/login' && userStore.isLoggedIn) {
+  if (to.path === '/') {
     next(userStore.isAdmin ? '/dashboard' : '/start-answer')
     return
   }

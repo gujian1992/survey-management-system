@@ -2,6 +2,7 @@ package com.gujian.questionnaire.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.gujian.questionnaire.dto.BatchSubmitAnswerDTO;
 import com.gujian.questionnaire.dto.SubmitAnswerDTO;
 import com.gujian.questionnaire.entity.AnswerRecord;
 import com.gujian.questionnaire.entity.QuestionBank;
@@ -14,7 +15,12 @@ import java.util.List;
 public interface AnswerRecordService extends IService<AnswerRecord> {
     
     /**
-     * 提交答案
+     * 批量提交答案
+     */
+    List<AnswerRecord> batchSubmitAnswers(BatchSubmitAnswerDTO batchSubmitDTO, Long userId);
+    
+    /**
+     * 提交单个答案（保留用于兼容）
      */
     AnswerRecord submitAnswer(SubmitAnswerDTO submitAnswerDTO, Long userId);
     

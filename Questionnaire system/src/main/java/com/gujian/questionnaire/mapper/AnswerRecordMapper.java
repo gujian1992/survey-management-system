@@ -56,4 +56,13 @@ public interface AnswerRecordMapper extends BaseMapper<AnswerRecord> {
             "SUM(CASE WHEN final_score IS NOT NULL THEN final_score ELSE 0 END) as total_score " +
             "FROM answer_record WHERE session_id = #{sessionId}")
     Object getSessionAnswerStats(@Param("sessionId") Long sessionId);
+
+    /**
+     * 统计会话已完成的题目数量
+     */
+    @Select("SELECT COUNT(*) FROM answer_record ar " +
+            "INNER JOIN answer_session s ON ar.session_id = s.id " +
+            "WHERE s.session_code = #{sessionCode} " +
+            "AND ar.final_score IS NOT NULL")
+    Integer countBySessionCode(@Param("sessionCode") String sessionCode);
 } 

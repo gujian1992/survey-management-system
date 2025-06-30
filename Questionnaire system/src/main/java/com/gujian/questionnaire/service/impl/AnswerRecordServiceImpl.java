@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gujian.questionnaire.dto.SubmitAnswerDTO;
+import com.gujian.questionnaire.dto.BatchSubmitAnswerDTO;
 import com.gujian.questionnaire.entity.AnswerRecord;
 import com.gujian.questionnaire.entity.AnswerSession;
 import com.gujian.questionnaire.entity.QuestionBank;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,9 +35,6 @@ import java.util.stream.Collectors;
 @Service
 public class AnswerRecordServiceImpl extends ServiceImpl<AnswerRecordMapper, AnswerRecord> implements AnswerRecordService {
 
-    @Autowired
-    private AnswerRecordMapper answerRecordMapper;
-    
     @Autowired
     private AnswerSessionService answerSessionService;
     
@@ -70,12 +69,15 @@ public class AnswerRecordServiceImpl extends ServiceImpl<AnswerRecordMapper, Ans
         }
         
         // 4. 检查是否已答过此题
-        AnswerRecord existingRecord = getOne(
-            lambdaQuery().eq(AnswerRecord::getSessionId, session.getId())
-                        .eq(AnswerRecord::getQuestionId, submitAnswerDTO.getQuestionId())
-        );
+        AnswerRecord existingRecord = lambdaQuery()
+            .eq(AnswerRecord::getSessionId, session.getId())
+            .eq(AnswerRecord::getQuestionId, submitAnswerDTO.getQuestionId())
+            .one();
+            
         if (existingRecord != null) {
-            throw new BusinessException(ErrorCode.ANSWER_ALREADY_SUBMITTED);
+            // 如果是批量提交时遇到已提交的答案，返回已存在的记录
+            log.info("题目{}已提交过答案，返回已存在记录", submitAnswerDTO.getQuestionId());
+            return existingRecord;
         }
         
         // 5. 创建答题记录
@@ -100,7 +102,7 @@ public class AnswerRecordServiceImpl extends ServiceImpl<AnswerRecordMapper, Ans
         answerRecord.setUserAnswer(userAnswer);
         
         // 7. 获取下一题序号
-        Integer nextSequence = answerRecordMapper.getNextSequenceNumber(session.getId());
+        Integer nextSequence = baseMapper.getNextSequenceNumber(session.getId());
         answerRecord.setSequenceNumber(nextSequence);
         
         // 8. 自动评分
@@ -109,12 +111,7 @@ public class AnswerRecordServiceImpl extends ServiceImpl<AnswerRecordMapper, Ans
         // 9. 保存答题记录
         save(answerRecord);
         
-        // 10. 更新会话进度
-        session.setCurrentCount(session.getCurrentCount() + 1);
-        session.setCurrentScore(session.getCurrentScore() + answerRecord.getFinalScore());
-        answerSessionService.updateById(session);
-        answerSessionService.updateSessionProgress(session.getId());
-        
+        // 10. 记录答题日志
         log.info("用户{}提交答案: 会话={}, 题目={}, 得分={}", 
                 userId, submitAnswerDTO.getSessionCode(), submitAnswerDTO.getQuestionId(), answerRecord.getFinalScore());
         
@@ -129,20 +126,21 @@ public class AnswerRecordServiceImpl extends ServiceImpl<AnswerRecordMapper, Ans
             throw new BusinessException(ErrorCode.SESSION_ALREADY_FINISHED);
         }
         
+        // 获取已答题目ID列表
+        List<AnswerRecord> answeredRecords = baseMapper.selectBySessionId(session.getId());
+        
         // 检查是否已完成所有题目
-        if (session.getCurrentCount() >= session.getTotalCount()) {
+        if (answeredRecords.size() >= session.getTotalCount()) {
             throw new BusinessException(ErrorCode.ANSWER_ALL_COMPLETED);
         }
         
-        // 获取已答题目ID列表
-        List<AnswerRecord> answeredRecords = answerRecordMapper.selectBySessionId(session.getId());
         List<Long> answeredQuestionIds = answeredRecords.stream()
                 .map(AnswerRecord::getQuestionId)
                 .collect(Collectors.toList());
         
         // 随机获取下一题（排除已答题目）
         List<QuestionBank> availableQuestions = questionBankService.getRandomQuestions(
-                session.getQuestionType(), session.getTotalCount() - session.getCurrentCount() + 10);
+                session.getQuestionType(), session.getTotalCount() - answeredRecords.size() + 10);
         
         QuestionBank nextQuestion = availableQuestions.stream()
                 .filter(q -> !answeredQuestionIds.contains(q.getId()))
@@ -158,7 +156,7 @@ public class AnswerRecordServiceImpl extends ServiceImpl<AnswerRecordMapper, Ans
 
     @Override
     public List<AnswerRecord> getSessionRecords(Long sessionId) {
-        List<AnswerRecord> records = answerRecordMapper.selectBySessionId(sessionId);
+        List<AnswerRecord> records = baseMapper.selectBySessionId(sessionId);
         records.forEach(this::processAnswerRecord);
         return records;
     }
@@ -166,7 +164,7 @@ public class AnswerRecordServiceImpl extends ServiceImpl<AnswerRecordMapper, Ans
     @Override
     public IPage<AnswerRecord> getNeedScoringPage(int current, int size) {
         Page<AnswerRecord> page = new Page<>(current, size);
-        IPage<AnswerRecord> result = answerRecordMapper.selectNeedScoringPage(page);
+        IPage<AnswerRecord> result = baseMapper.selectNeedScoringPage(page);
         
         result.getRecords().forEach(this::processAnswerRecord);
         return result;
@@ -198,24 +196,21 @@ public class AnswerRecordServiceImpl extends ServiceImpl<AnswerRecordMapper, Ans
         
         switch (questionType) {
             case 1: // 单选题
-            case 3: // 填空题
-                isCorrect = userAnswer.trim().equalsIgnoreCase(correctAnswer.trim());
+                isCorrect = userAnswer.equals(correctAnswer);
                 break;
-                
             case 2: // 多选题
                 isCorrect = compareMultipleChoice(userAnswer, correctAnswer);
                 break;
-                
+            case 3: // 填空题
+                isCorrect = userAnswer.trim().equals(correctAnswer.trim());
+                break;
             default:
-                isCorrect = false;
+                return false;
         }
         
         answerRecord.setIsCorrect(isCorrect);
-        
-        // 计算分数
-        int score = isCorrect ? question.getScore() : 0;
-        answerRecord.setAutoScore(score);
-        answerRecord.setFinalScore(score);
+        answerRecord.setAutoScore(isCorrect ? question.getScore() : 0);
+        answerRecord.setFinalScore(answerRecord.getAutoScore());
         
         return true;
     }
@@ -223,101 +218,142 @@ public class AnswerRecordServiceImpl extends ServiceImpl<AnswerRecordMapper, Ans
     @Override
     public AnswerRecord getRecordDetail(Long recordId) {
         AnswerRecord record = getById(recordId);
-        if (record == null) {
-            throw new BusinessException(ErrorCode.ANSWER_RECORD_NOT_FOUND);
+        if (record != null) {
+            processAnswerRecord(record);
         }
-        
-        processAnswerRecord(record);
         return record;
     }
 
     @Override
     @Transactional
     public boolean batchAutoScore(Long sessionId) {
-        List<AnswerRecord> records = answerRecordMapper.selectBySessionId(sessionId);
-        
+        List<AnswerRecord> records = baseMapper.selectBySessionId(sessionId);
         for (AnswerRecord record : records) {
-            if (record.getQuestionType() != 4 && record.getQuestionType() != 5) {
-                QuestionBank question = questionBankService.getById(record.getQuestionId());
-                if (question != null) {
-                    autoScore(record, question);
-                    updateById(record);
-                }
+            if (record.getQuestionType() == 4 || record.getQuestionType() == 5) {
+                continue;
+            }
+            QuestionBank question = questionBankService.getQuestionDetail(record.getQuestionId());
+            if (question != null) {
+                autoScore(record, question);
+                updateById(record);
             }
         }
-        
-        // 更新会话分数
-        answerSessionService.updateSessionScore(sessionId);
-        
         return true;
     }
 
     @Override
     public Object getSessionAnswerStats(Long sessionId) {
-        return answerRecordMapper.getSessionAnswerStats(sessionId);
+        return baseMapper.getSessionAnswerStats(sessionId);
     }
 
-    /**
-     * 比较多选题答案
-     */
-    private boolean compareMultipleChoice(String userAnswer, String correctAnswer) {
-        try {
-            List<String> userAnswers = Arrays.asList(userAnswer.split(","))
-                    .stream().map(String::trim).sorted().collect(Collectors.toList());
-            
-            List<String> correctAnswers;
-            if (correctAnswer.startsWith("[") && correctAnswer.endsWith("]")) {
-                // JSON格式的正确答案
-                correctAnswers = objectMapper.readValue(correctAnswer, new TypeReference<List<String>>() {});
-                correctAnswers = correctAnswers.stream().map(String::trim).sorted().collect(Collectors.toList());
-            } else {
-                // 逗号分隔的正确答案
-                correctAnswers = Arrays.asList(correctAnswer.split(","))
-                        .stream().map(String::trim).sorted().collect(Collectors.toList());
+    @Override
+    @Transactional
+    public List<AnswerRecord> batchSubmitAnswers(BatchSubmitAnswerDTO batchSubmitDTO, Long userId) {
+        // 1. 验证会话
+        AnswerSession session = answerSessionService.getSessionByCode(batchSubmitDTO.getSessionCode());
+        if (!session.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.SESSION_PERMISSION_DENIED);
+        }
+        
+        if (session.getStatus() != 1) {
+            throw new BusinessException(ErrorCode.ANSWER_SESSION_FINISHED);
+        }
+        
+        // 2. 检查是否超时
+        if (answerSessionService.checkSessionTimeout(batchSubmitDTO.getSessionCode())) {
+            throw new BusinessException(ErrorCode.SESSION_TIMEOUT);
+        }
+        
+        List<AnswerRecord> records = new ArrayList<>();
+        
+        // 3. 批量处理每道题的答案
+        for (BatchSubmitAnswerDTO.AnswerDTO answerDTO : batchSubmitDTO.getAnswers()) {
+            // 验证题目
+            QuestionBank question = questionBankService.getQuestionDetail(answerDTO.getQuestionId());
+            if (question == null) {
+                throw new BusinessException(ErrorCode.QUESTION_NOT_FOUND);
             }
             
-            return userAnswers.equals(correctAnswers);
-        } catch (Exception e) {
-            log.warn("多选题答案比较失败: userAnswer={}, correctAnswer={}", userAnswer, correctAnswer, e);
-            return false;
+            // 检查是否已答过此题
+            AnswerRecord existingRecord = lambdaQuery()
+                .eq(AnswerRecord::getSessionId, session.getId())
+                .eq(AnswerRecord::getQuestionId, answerDTO.getQuestionId())
+                .one();
+                
+            if (existingRecord != null) {
+                records.add(existingRecord);
+                continue;
+            }
+            
+            // 创建答题记录
+            AnswerRecord answerRecord = new AnswerRecord();
+            answerRecord.setSessionId(session.getId());
+            answerRecord.setQuestionId(answerDTO.getQuestionId());
+            answerRecord.setQuestionType(question.getType());
+            answerRecord.setQuestionContent(question.getTitle() + "\n" + question.getContent());
+            answerRecord.setQuestionOptions(question.getOptions());
+            answerRecord.setCorrectAnswer(question.getCorrectAnswer());
+            answerRecord.setTimeSpentSeconds(answerDTO.getTimeSpentSeconds());
+            answerRecord.setAnswerTime(LocalDateTime.now());
+            answerRecord.setUserAnswer(answerDTO.getUserAnswer());
+            
+            // 获取序号
+            Integer nextSequence = baseMapper.getNextSequenceNumber(session.getId());
+            answerRecord.setSequenceNumber(nextSequence);
+            
+            // 自动评分
+            autoScore(answerRecord, question);
+            
+            // 保存答题记录
+            save(answerRecord);
+            records.add(answerRecord);
         }
+        
+        log.info("用户{}批量提交答案: 会话={}, 题目数量={}", 
+                userId, batchSubmitDTO.getSessionCode(), records.size());
+        
+        return records;
     }
 
-    /**
-     * 处理答题记录扩展信息
-     */
+    private boolean compareMultipleChoice(String userAnswer, String correctAnswer) {
+        if (userAnswer == null || correctAnswer == null) {
+            return false;
+        }
+        
+        List<String> userAnswers = Arrays.asList(userAnswer.split(","));
+        List<String> correctAnswers = Arrays.asList(correctAnswer.split(","));
+        
+        return userAnswers.size() == correctAnswers.size() 
+                && userAnswers.containsAll(correctAnswers);
+    }
+
     private void processAnswerRecord(AnswerRecord record) {
+        if (record == null) return;
+        
         // 设置题型名称
         record.setQuestionTypeName(getQuestionTypeName(record.getQuestionType()));
         
-        // 设置是否需要人工评分
-        record.setNeedManualScore(record.getQuestionType() == 4 || record.getQuestionType() == 5);
-        
-        // 解析选项
+        // 处理选项
         if (StringUtils.hasText(record.getQuestionOptions())) {
             try {
-                List<String> optionList = objectMapper.readValue(record.getQuestionOptions(), new TypeReference<List<String>>() {});
-                record.setOptionList(optionList);
+                List<String> options = objectMapper.readValue(
+                        record.getQuestionOptions(),
+                        new TypeReference<List<String>>() {}
+                );
+                record.setOptionList(options);
             } catch (Exception e) {
-                log.warn("解析题目选项失败: {}", e.getMessage());
+                log.error("解析题目选项失败: {}", e.getMessage());
             }
         }
         
-        // 解析用户答案列表（多选题）
-        if (StringUtils.hasText(record.getUserAnswer()) && record.getQuestionType() == 2) {
-            try {
-                List<String> userAnswerList = Arrays.asList(record.getUserAnswer().split(","))
-                        .stream().map(String::trim).collect(Collectors.toList());
-                record.setUserAnswerList(userAnswerList);
-            } catch (Exception e) {
-                log.warn("解析用户答案列表失败: {}", e.getMessage());
+        // 处理多选题答案
+        if (record.getQuestionType() == 2) {
+            if (StringUtils.hasText(record.getUserAnswer())) {
+                record.setUserAnswerList(Arrays.asList(record.getUserAnswer().split(",")));
             }
         }
     }
 
-    /**
-     * 获取题型名称
-     */
     private String getQuestionTypeName(Integer type) {
         switch (type) {
             case 1: return "单选题";
@@ -325,7 +361,7 @@ public class AnswerRecordServiceImpl extends ServiceImpl<AnswerRecordMapper, Ans
             case 3: return "填空题";
             case 4: return "简答题";
             case 5: return "评分题";
-            default: return "未知";
+            default: return "未知题型";
         }
     }
 } 

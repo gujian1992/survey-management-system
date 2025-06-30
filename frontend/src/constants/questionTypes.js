@@ -1,31 +1,31 @@
-// 题型常量定义
+// 题型常量
 export const QUESTION_TYPES = {
-  SINGLE_CHOICE: 1,    // 单选题
-  MULTIPLE_CHOICE: 2,  // 多选题
-  FILL_BLANK: 3,       // 填空题
-  SHORT_ANSWER: 4,     // 简答题
-  RATING: 5,           // 评分题
-  MIXED: 0             // 混合题型
+  MIXED: 0,           // 混合题型
+  SINGLE_CHOICE: 1,   // 单选题
+  MULTIPLE_CHOICE: 2, // 多选题
+  FILL_BLANK: 3,      // 填空题
+  SHORT_ANSWER: 4,    // 简答题
+  RATING: 5          // 评分题
 }
 
 // 题型名称映射
 export const QUESTION_TYPE_NAMES = {
+  [QUESTION_TYPES.MIXED]: '混合题型',
   [QUESTION_TYPES.SINGLE_CHOICE]: '单选题',
-  [QUESTION_TYPES.MULTIPLE_CHOICE]: '多选题', 
+  [QUESTION_TYPES.MULTIPLE_CHOICE]: '多选题',
   [QUESTION_TYPES.FILL_BLANK]: '填空题',
   [QUESTION_TYPES.SHORT_ANSWER]: '简答题',
-  [QUESTION_TYPES.RATING]: '评分题',
-  [QUESTION_TYPES.MIXED]: '混合题型'
+  [QUESTION_TYPES.RATING]: '评分题'
 }
 
-// 题型选项（用于下拉框）
+// 题型选项（用于选择器）
 export const QUESTION_TYPE_OPTIONS = [
-  { value: QUESTION_TYPES.SINGLE_CHOICE, label: '单选题' },
-  { value: QUESTION_TYPES.MULTIPLE_CHOICE, label: '多选题' },
-  { value: QUESTION_TYPES.FILL_BLANK, label: '填空题' },
-  { value: QUESTION_TYPES.SHORT_ANSWER, label: '简答题' },
-  { value: QUESTION_TYPES.RATING, label: '评分题' },
-  { value: QUESTION_TYPES.MIXED, label: '混合题型' }
+  { value: QUESTION_TYPES.MIXED, label: QUESTION_TYPE_NAMES[QUESTION_TYPES.MIXED] },
+  { value: QUESTION_TYPES.SINGLE_CHOICE, label: QUESTION_TYPE_NAMES[QUESTION_TYPES.SINGLE_CHOICE] },
+  { value: QUESTION_TYPES.MULTIPLE_CHOICE, label: QUESTION_TYPE_NAMES[QUESTION_TYPES.MULTIPLE_CHOICE] },
+  { value: QUESTION_TYPES.FILL_BLANK, label: QUESTION_TYPE_NAMES[QUESTION_TYPES.FILL_BLANK] },
+  { value: QUESTION_TYPES.SHORT_ANSWER, label: QUESTION_TYPE_NAMES[QUESTION_TYPES.SHORT_ANSWER] },
+  { value: QUESTION_TYPES.RATING, label: QUESTION_TYPE_NAMES[QUESTION_TYPES.RATING] }
 ]
 
 // 题型颜色（用于UI展示）

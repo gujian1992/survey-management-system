@@ -6,7 +6,7 @@
   >
     <div class="metric-icon">
       <el-icon :color="metric.iconColor" :size="iconSize">
-        <component :is="metric.icon" />
+        <component :is="getIconComponent(metric.icon)" />
       </el-icon>
     </div>
     
@@ -45,7 +45,16 @@
 
 <script setup>
 import { computed } from 'vue'
-import { CaretTop, CaretBottom } from '@element-plus/icons-vue'
+import { 
+  CaretTop, 
+  CaretBottom,
+  Document,
+  Collection,
+  Grid,
+  Trophy,
+  Check,
+  Star
+} from '@element-plus/icons-vue'
 
 // 组件名称
 defineOptions({
@@ -88,6 +97,18 @@ const progressColor = computed(() => {
 })
 
 // 方法
+const getIconComponent = (iconName) => {
+  const iconMap = {
+    'Document': Document,
+    'Collection': Collection,
+    'Grid': Grid,
+    'Trophy': Trophy,
+    'Check': Check,
+    'Star': Star
+  }
+  return iconMap[iconName] || Document
+}
+
 const formatNumber = (value) => {
   if (typeof value !== 'number') return value
   

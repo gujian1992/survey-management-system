@@ -161,18 +161,6 @@ defineExpose({
   position: relative !important;
   z-index: 1050 !important;
   overflow: visible !important;
-  animation: slideInDown 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-@keyframes slideInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .search-panel::before {

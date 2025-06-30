@@ -5,58 +5,73 @@
   </div>
   
   <!-- 主应用布局 -->
-  <el-container v-else class="app-container">
-    <el-aside width="250px" class="sidebar">
+  <div v-else class="app-container">
+    <div class="sidebar">
       <div class="logo">
         <h2>问卷系统</h2>
       </div>
-      <el-menu
-        :default-active="$route.path"
-        router
-        background-color="#304156"
-        text-color="#bfcbd9"
-        active-text-color="#409EFF"
-      >
+      <div class="menu-container">
         <!-- 管理员菜单 -->
         <template v-if="userStore.isAdmin">
-          <el-menu-item index="/dashboard">
-            <el-icon><DataBoard /></el-icon>
-            <span>仪表盘</span>
-          </el-menu-item>
-          <el-menu-item index="/question-bank">
-            <el-icon><Document /></el-icon>
-            <span>题库管理</span>
-          </el-menu-item>
-          <el-menu-item index="/answer-sessions">
-            <el-icon><List /></el-icon>
-            <span>答题会话</span>
-          </el-menu-item>
-          <el-menu-item index="/scoring">
-            <el-icon><Edit /></el-icon>
-            <span>评分管理</span>
-          </el-menu-item>
-          <el-menu-item index="/statistics">
-            <el-icon><DataAnalysis /></el-icon>
-            <span>数据统计</span>
-          </el-menu-item>
+          <div 
+            class="menu-item" 
+            :class="{ active: $route.path === '/dashboard' }"
+            @click="navigateTo('/dashboard')"
+          >
+            仪表盘
+          </div>
+          <div 
+            class="menu-item" 
+            :class="{ active: $route.path === '/question-bank' }"
+            @click="navigateTo('/question-bank')"
+          >
+            题库管理
+          </div>
+          <div 
+            class="menu-item" 
+            :class="{ active: $route.path === '/answer-sessions' }"
+            @click="navigateTo('/answer-sessions')"
+          >
+            答题会话
+          </div>
+          <div 
+            class="menu-item" 
+            :class="{ active: $route.path === '/scoring' }"
+            @click="navigateTo('/scoring')"
+          >
+            评分管理
+          </div>
+          <div 
+            class="menu-item" 
+            :class="{ active: $route.path === '/statistics' }"
+            @click="navigateTo('/statistics')"
+          >
+            数据统计
+          </div>
         </template>
         
         <!-- 普通用户菜单 -->
         <template v-else>
-          <el-menu-item index="/start-answer">
-            <el-icon><Edit /></el-icon>
-            <span>开始答题</span>
-          </el-menu-item>
-          <el-menu-item index="/my-records">
-            <el-icon><Document /></el-icon>
-            <span>我的记录</span>
-          </el-menu-item>
+          <div 
+            class="menu-item" 
+            :class="{ active: $route.path === '/start-answer' }"
+            @click="navigateTo('/start-answer')"
+          >
+            开始答题
+          </div>
+          <div 
+            class="menu-item" 
+            :class="{ active: $route.path === '/my-records' }"
+            @click="navigateTo('/my-records')"
+          >
+            我的记录
+          </div>
         </template>
-      </el-menu>
-    </el-aside>
+      </div>
+    </div>
     
-    <el-container style="height: 100%;">
-      <el-header class="header">
+    <div class="main-container">
+      <div class="header">
         <div class="user-info">
           <el-dropdown>
             <span class="user-name">
@@ -66,7 +81,7 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item>
-                  <span class="role-badge">{{ userStore.isAdmin ? '管理员' : '用户' }}</span>
+                  <span class="role-badge">{{ userStore.isAdmin ? '系统管理员' : '普通用户' }}</span>
                 </el-dropdown-item>
                 <el-dropdown-item divided @click="handleLogout">
                   <el-icon><SwitchButton /></el-icon>
@@ -76,186 +91,146 @@
             </template>
           </el-dropdown>
         </div>
-      </el-header>
+      </div>
       
-      <el-main class="main-content" style="height: calc(100vh - 60px); overflow-y: auto;">
-        <router-view v-slot="{ Component, route }">
-          <transition 
-            name="fade-transform" 
-            mode="out-in"
-            @before-leave="handleBeforeLeave"
-            @after-enter="handleAfterEnter"
-          >
-            <keep-alive :include="keepAliveComponents">
-              <component :is="Component" :key="generateRouteKey(route)" />
-            </keep-alive>
-          </transition>
-        </router-view>
-      </el-main>
-    </el-container>
-  </el-container>
+      <div class="main-content">
+        <RouteTransitionMonitor>
+          <router-view />
+        </RouteTransitionMonitor>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { getCachedComponents, getRouteKey } from '@/utils/cacheManager'
+import { 
+  User, 
+  SwitchButton,
+  Menu,
+  Setting,
+  Document,
+  Timer,
+  DataAnalysis
+} from '@element-plus/icons-vue'
+import RouteTransitionMonitor from '@/components/RouteTransitionMonitor.vue'
+import { SimplePremiumDialog } from '@/utils/simplePremiumDialog.js'
+import { ElMessage } from 'element-plus'
+import { onMounted, nextTick } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-// 智能缓存管理 - 使用缓存管理器
-const keepAliveComponents = computed(() => {
-  return getCachedComponents(userStore.role)
-})
-
-
-
-const getPageTitle = () => {
-  const titleMap = {
-    '/dashboard': '仪表盘',
-    '/question-bank': '题库管理',
-    '/answer-sessions': '答题会话',
-    '/scoring': '评分管理',
-    '/statistics': '数据统计',
-    '/start-answer': '开始答题',
-    '/answer': '答题中',
-    '/my-records': '我的记录'
+const navigateTo = (path) => {
+  if (route.path !== path) {
+    router.push(path)
   }
-  
-  // 处理动态路由
-  const path = route.path
-  for (const key in titleMap) {
-    if (path.startsWith(key)) {
-      return titleMap[key]
-    }
-  }
-  
-  return '问卷系统'
-}
-
-// 使用智能缓存管理器生成路由key
-const generateRouteKey = (route) => {
-  return getRouteKey(route, route.name)
-}
-
-const handleBeforeLeave = () => {
-  // 页面离开前的清理逻辑
-  const currentRoute = route
-  
-  // 清理可能导致重叠的组件状态
-  const cleanupRoutes = ['QuestionnaireAnswer', 'QuestionnaireFill', 'QuestionnaireCreate', 'QuestionnaireEdit']
-  if (cleanupRoutes.includes(currentRoute.name)) {
-    // 触发全局清理事件
-    window.dispatchEvent(new CustomEvent('pageStateCleanup', {
-      detail: { route: currentRoute.name }
-    }))
-  }
-}
-
-const handleAfterEnter = () => {
-  // 页面进入后的初始化逻辑
-  const currentRoute = route
-  
-  // 确保页面状态正确初始化
-  setTimeout(() => {
-    window.dispatchEvent(new CustomEvent('pageStateInit', {
-      detail: { route: currentRoute.name }
-    }))
-  }, 50)
 }
 
 const handleLogout = async () => {
   try {
-    await ElMessageBox.confirm(
-      '确定要退出登录吗？',
-      '提示',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
+    await SimplePremiumDialog.confirmLogout()
     
-    await userStore.logout()
-    ElMessage.success('已退出登录')
-    router.push('/login')
+    try {
+      // 先清除用户状态
+      await userStore.logout()
+      console.log('退出登录成功')
+      
+      // 等待下一个tick，确保状态更新完成
+      await nextTick()
+      
+      // 然后再跳转到登录页
+      await router.push('/login')
+    } catch (error) {
+      console.error('退出登录失败:', error)
+      ElMessage.error('网络异常，退出失败，请重试')
+    }
   } catch (error) {
-    // 用户取消操作
+    // 用户取消退出，不需要处理
   }
 }
+
+onMounted(() => {
+  console.log('应用已启动')
+})
 </script>
 
 <style scoped>
-/* 🚀 现代化应用设计 */
 .app-container {
+  display: flex;
   height: 100vh;
-  overflow: hidden;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative;
 }
 
-.app-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 40% 60%, rgba(102, 126, 234, 0.1) 0%, transparent 40%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* 🎨 侧边栏现代化设计 */
 .sidebar {
-  background: rgba(48, 65, 86, 0.95) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
-  position: relative !important;
-  z-index: 10 !important;
-  box-shadow: 
-    4px 0 20px rgba(0, 0, 0, 0.1),
-    inset -1px 0 0 rgba(255, 255, 255, 0.1) !important;
+  width: 250px;
+  background: rgba(48, 65, 86, 0.95);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
 }
 
 .logo {
   padding: 20px;
   text-align: center;
-  color: #fff;
   border-bottom: 1px solid #434c5e;
 }
 
 .logo h2 {
   margin: 0;
   font-size: 18px;
+  color: white;
+}
+
+.menu-container {
+  flex: 1;
+  padding: 20px 0;
+}
+
+.menu-item {
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+  font-size: 14px;
+}
+
+.menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.menu-item.active {
+  background-color: rgba(64, 158, 255, 0.2);
+  border-left-color: #409EFF;
+  color: #409EFF;
+}
+
+.main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .header {
+  height: 60px;
   background-color: #fff;
   border-bottom: 1px solid #dcdfe6;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   padding: 0 20px;
-}
-
-.header-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: #303133;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .user-info {
   display: flex;
   align-items: center;
+  gap: 15px;
 }
 
 .user-name {
@@ -289,50 +264,45 @@ const handleLogout = async () => {
 }
 
 .main-content {
+  flex: 1;
   background-color: #f5f5f5;
   padding: 20px;
   position: relative;
-  overflow-x: hidden;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-/* 页面切换动画 - 优化以避免重叠问题 */
-.fade-transform-enter-active,
-.fade-transform-leave-active {
-  transition: all 0.25s ease;
-  position: relative;
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+  }
+  
+  .menu-container {
+    display: flex;
+    overflow-x: auto;
+    padding: 10px;
+  }
+  
+  .menu-item {
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
+  }
 }
-
-.fade-transform-enter-from {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-.fade-transform-leave-to {
-  opacity: 0;
-  transform: translateX(-20px);
-}
-
-/* 确保离开的页面在下层，进入的页面在上层 */
-.fade-transform-leave-active {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 0;
-  overflow-y: auto;
-}
-
-.fade-transform-enter-active {
-  z-index: 1;
-  min-height: 100%;
-}
-
-
 </style>
 
 <style>
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;

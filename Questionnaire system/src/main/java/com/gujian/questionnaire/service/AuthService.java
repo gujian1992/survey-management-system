@@ -89,7 +89,27 @@ public class AuthService {
     public boolean isSessionValid(String username) {
         try {
             String sessionKey = USER_SESSION_PREFIX + username;
-            return redisService.hasKey(sessionKey);
+            if (!redisService.hasKey(sessionKey)) {
+                return false;
+            }
+            
+            // 检查会话是否过期
+            Map<Object, Object> sessionInfo = redisService.hmget(sessionKey);
+            if (sessionInfo == null || sessionInfo.isEmpty()) {
+                return false;
+            }
+            
+            // 检查最后访问时间
+            Object lastAccessTimeObj = sessionInfo.get("lastAccessTime");
+            if (lastAccessTimeObj == null) {
+                return false;
+            }
+            
+            long lastAccessTime = Long.parseLong(lastAccessTimeObj.toString());
+            long currentTime = System.currentTimeMillis();
+            long sessionTimeout = jwtExpiration + 300000; // JWT过期时间 + 5分钟
+            
+            return (currentTime - lastAccessTime) < sessionTimeout;
         } catch (Exception e) {
             log.error("Session validation failed for user: {}, error: {}", username, e.getMessage());
             return false;

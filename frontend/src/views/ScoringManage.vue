@@ -210,7 +210,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="questionContent" label="题目内容" min-width="200" show-overflow-tooltip />
+                      <el-table-column prop="questionContent" label="题目描述" min-width="200" show-overflow-tooltip />
       <el-table-column prop="userAnswer" label="用户答案" min-width="200" show-overflow-tooltip />
       <el-table-column prop="scoringStatus" label="评分状态" width="100" align="center">
         <template #default="{ row }">

@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 题库Mapper接口
@@ -25,12 +26,14 @@ public interface QuestionBankMapper extends BaseMapper<QuestionBank> {
             "AND (#{type} IS NULL OR qb.type = #{type}) " +
             "AND (#{status} IS NULL OR qb.status = #{status}) " +
             "AND (#{difficulty} IS NULL OR qb.difficulty = #{difficulty}) " +
+            "AND (#{priority} IS NULL OR qb.priority = #{priority}) " +
             "AND (#{keyword} IS NULL OR qb.title LIKE CONCAT('%', #{keyword}, '%') OR qb.content LIKE CONCAT('%', #{keyword}, '%')) " +
-            "ORDER BY qb.priority DESC, qb.create_time DESC")
+            "ORDER BY qb.update_time DESC, qb.priority DESC, qb.create_time DESC")
     IPage<QuestionBank> selectQuestionPage(IPage<QuestionBank> page, 
                                           @Param("type") Integer type,
                                           @Param("status") Integer status,
                                           @Param("difficulty") Integer difficulty,
+                                          @Param("priority") Integer priority,
                                           @Param("keyword") String keyword);
     
     /**
@@ -54,5 +57,23 @@ public interface QuestionBankMapper extends BaseMapper<QuestionBank> {
             "COUNT(CASE WHEN type = 4 THEN 1 END) as essay, " +
             "COUNT(CASE WHEN type = 5 THEN 1 END) as rating " +
             "FROM question_bank WHERE deleted = 0 AND status = 1")
-    Object getQuestionStats();
+    Map<String, Object> getQuestionStats();
+    
+    /**
+     * 获取各题型统计信息（数组格式）
+     */
+    @Select("SELECT " +
+            "type as type, " +
+            "COUNT(*) as count " +
+            "FROM question_bank " +
+            "WHERE deleted = 0 AND status = 1 " +
+            "GROUP BY type " +
+            "ORDER BY type")
+    List<Map<String, Object>> getQuestionTypeStats();
+    
+    /**
+     * 根据题型和优先级随机获取题目（多题型）
+     * 注意：这个方法需要在XML映射器中实现，因为@Select注解不支持foreach标签
+     */
+    List<QuestionBank> selectRandomQuestionsFromTypes(@Param("types") List<Integer> types, @Param("count") Integer count);
 } 

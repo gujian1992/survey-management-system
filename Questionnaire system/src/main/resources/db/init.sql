@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS question_bank (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '题目ID',
     title TEXT NOT NULL COMMENT '题目标题',
     type INT NOT NULL COMMENT '题型：1-单选 2-多选 3-填空 4-简答 5-评分',
-    content TEXT COMMENT '题目内容详细描述',
+    content TEXT COMMENT '题目描述详细说明',
     options JSON COMMENT '选项内容（JSON格式，适用于选择题）',
     correct_answer TEXT COMMENT '正确答案（客观题使用，主观题为NULL）',
     priority INT DEFAULT 1 COMMENT '优先级：1-低 2-中 3-高（影响出题概率）',
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS answer_record (
     session_id BIGINT NOT NULL COMMENT '会话ID',
     question_id BIGINT NOT NULL COMMENT '题目ID',
     question_type INT NOT NULL COMMENT '题型',
-    question_content TEXT COMMENT '题目内容快照（防止题目被修改影响记录）',
+    question_content TEXT COMMENT '题目描述快照（防止题目被修改影响记录）',
     question_options JSON COMMENT '题目选项快照',
     user_answer TEXT COMMENT '用户答案',
     correct_answer TEXT COMMENT '正确答案',
@@ -392,3 +392,12 @@ ORDER BY TABLE_NAME;
 ALTER TABLE question_bank 
 ADD COLUMN explanation TEXT COMMENT '答案解析' 
 AFTER correct_answer;
+ALTER TABLE answer_session ADD COLUMN question_types VARCHAR(255) COMMENT '选择的题型列表，JSON格式';
+UPDATE answer_session SET question_types = CONCAT('[', question_type, ']') WHERE question_types IS NULL;
+ALTER TABLE answer_session
+ADD COLUMN create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间' AFTER scoring_status,
+ADD COLUMN update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间' AFTER create_time,
+ADD COLUMN is_deleted INT DEFAULT 0 COMMENT '逻辑删除：0-未删除 1-已删除' AFTER update_time,
+ADD INDEX idx_create_time (create_time),
+ADD INDEX idx_update_time (update_time),
+ADD INDEX idx_is_deleted (is_deleted);

@@ -34,7 +34,7 @@
         <div class="search-field">
           <label>题目</label>
           <el-input
-            v-model="searchForm.title"
+            v-model="searchForm.keyword"
             placeholder="输入题目标题关键词"
             clearable
             class="search-input"
@@ -57,6 +57,7 @@
         <div class="search-field">
           <label>优先级</label>
           <el-select v-model="searchForm.priority" placeholder="全部优先级" clearable class="filter-select">
+            <el-option label="全部优先级" :value="null" />
             <el-option label="低优先级" :value="1" />
             <el-option label="中优先级" :value="2" />
             <el-option label="高优先级" :value="3" />
@@ -66,6 +67,7 @@
         <div class="search-field">
           <label>状态</label>
           <el-select v-model="searchForm.status" placeholder="全部状态" clearable class="filter-select">
+            <el-option label="全部状态" value="" />
             <el-option label="已启用" :value="1" />
             <el-option label="已禁用" :value="0" />
           </el-select>
@@ -237,7 +239,7 @@
           </div>
           <div class="step-item" :class="{ active: questionForm.title, completed: questionForm.type && (questionForm.optionList?.[0] || questionForm.correctAnswer) }">
             <div class="step-number">2</div>
-            <div class="step-text">题目内容</div>
+            <div class="step-text">题目描述</div>
           </div>
           <div class="step-item" :class="{ active: questionForm.type && (questionForm.optionList?.[0] || questionForm.correctAnswer), completed: questionForm.explanation }">
             <div class="step-number">3</div>
@@ -308,11 +310,11 @@
             </div>
           </div>
 
-          <!-- 题目内容卡片 -->
+          <!-- 题目描述卡片 -->
           <div class="form-section section-content" :class="{ completed: isContentCompleted }">
             <div class="section-title">
               <el-icon><Document /></el-icon>
-              题目内容
+              题目描述
             </div>
             <div class="section-content">
               <!-- 智能提示区域 -->
@@ -496,7 +498,7 @@
     <!-- 题目预览 - 卡片式对话框 -->
     <el-dialog
       v-model="previewVisible"
-      :title="previewQuestion?.title || '题目预览'"
+      title="题目预览"
       width="800px"
       class="preview-dialog"
     >
@@ -527,7 +529,7 @@
           <div class="content-section">
             <div class="section-header">
               <el-icon color="#667eea"><Document /></el-icon>
-              <span>题目内容</span>
+                              <span>题目描述</span>
             </div>
             <div class="question-content">{{ previewQuestion.content }}</div>
           </div>
@@ -629,6 +631,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { SimplePremiumDialog } from '@/utils/simplePremiumDialog.js'
 import { questionBankAPI } from '../api'
 import { 
   QUESTION_TYPE_OPTIONS,
@@ -677,10 +680,10 @@ const questionFormRef = ref()
 
 // 搜索表单
 const searchForm = reactive({
-  title: '',
-  type: null,
-  priority: null,
-  status: null
+  keyword: '',
+  type: '',
+  priority: '',
+  status: ''
 })
 
 // 分页
@@ -729,7 +732,7 @@ const questionRules = {
     { required: true, message: '请选择题型', trigger: 'change' }
   ],
   content: [
-    { required: true, message: '请输入题目内容', trigger: 'blur' }
+    { required: true, message: '请输入题目描述', trigger: 'blur' }
   ],
   correctAnswer: [
     { required: true, message: '请设置正确答案', trigger: 'blur' }
@@ -744,7 +747,10 @@ const questionRules = {
 
 // 计算属性
 const dialogTitle = computed(() => isEdit.value ? '编辑题目' : '新建题目')
-const questionTypeOptions = computed(() => QUESTION_TYPE_OPTIONS.filter(item => item.value !== 0))
+const questionTypeOptions = computed(() => [
+  { value: null, label: '全部题型' },
+  ...QUESTION_TYPE_OPTIONS.filter(item => item.value !== 0)
+])
 
 // 智能判断是否需要描述
 const questionNeedsDescription = computed(() => {
@@ -950,8 +956,21 @@ const loadQuestionList = async () => {
     }
     
     console.log('发送请求参数:', params)
+    console.log('具体搜索参数:', {
+      keyword: params.keyword,
+      type: params.type,
+      priority: params.priority,
+      status: params.status
+    })
     const response = await questionBankAPI.getList(params)
     console.log('接收到的响应:', response)
+    console.log('返回的数据条数:', response.data?.records?.length)
+    if (params.priority) {
+      console.log('过滤后数据的优先级分布:', response.data?.records?.map(item => ({ title: item.title, priority: item.priority })))
+    }
+    if (params.status !== null && params.status !== undefined) {
+      console.log('过滤后数据的状态分布:', response.data?.records?.map(item => ({ title: item.title, status: item.status })))
+    }
     
     if (response.data) {
       questionList.value = response.data.records || []
@@ -975,7 +994,7 @@ const handleSearch = () => {
 
 const resetSearch = () => {
   // 强制重置搜索表单
-  searchForm.title = ''
+  searchForm.keyword = ''
   searchForm.type = null
   searchForm.priority = null
   searchForm.status = null
@@ -1155,13 +1174,13 @@ const copyQuestion = async (row) => {
 // 删除题目
 const deleteQuestion = async (row) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要删除题目"${row.title}"吗？此操作不可恢复。`,
-      '确认删除',
+    await SimplePremiumDialog.confirm(
+      `确定要删除题目"${row.title}"吗？\n\n⚠️ 此操作不可恢复，请谨慎操作！`,
+      '🗑️ 确认删除题目',
       {
-        confirmButtonText: '确定',
+        confirmButtonText: '确认删除',
         cancelButtonText: '取消',
-        type: 'warning',
+        type: 'error'
       }
     )
     
@@ -1181,6 +1200,8 @@ const toggleQuestionStatus = async (row) => {
   try {
     await questionBankAPI.toggleStatus(row.id, row.status)
     ElMessage.success(`${row.status ? '启用' : '禁用'}成功`)
+    // 重新加载列表以确保数据同步
+    loadQuestionList()
   } catch (error) {
     console.error('切换状态失败:', error)
     ElMessage.error('切换状态失败')
@@ -1197,13 +1218,13 @@ const batchDelete = async () => {
   }
   
   try {
-    await ElMessageBox.confirm(
-      `确定要删除选中的 ${selectedQuestions.value.length} 道题目吗？此操作不可恢复。`,
-      '确认批量删除',
+    await SimplePremiumDialog.confirm(
+      `确定要删除选中的 ${selectedQuestions.value.length} 道题目吗？\n\n⚠️ 此操作不可恢复，请谨慎操作！`,
+      '🗑️ 确认批量删除',
       {
-        confirmButtonText: '确定',
+        confirmButtonText: '确认删除',
         cancelButtonText: '取消',
-        type: 'warning',
+        type: 'error'
       }
     )
     
@@ -1334,6 +1355,7 @@ const saveQuestion = async () => {
     
     // 调试信息：确认发送的数据格式
     console.log('发送到后端的数据:', questionData)
+    console.log('优先级值:', questionData.priority, '类型:', typeof questionData.priority)
     
     if (isEdit.value) {
       await questionBankAPI.update(questionData.id, questionData)
@@ -5954,7 +5976,7 @@ onMounted(() => {
   text-align: center !important;
 }
 
-/* 美化题目内容框 */
+/* 美化题目描述框 */
 .preview-dialog .question-content {
   font-size: 16px !important;
   line-height: 1.8 !important;
@@ -5967,7 +5989,7 @@ onMounted(() => {
   margin: 16px 0 !important;
 }
 
-/* 已移除题目内容框上方的装饰线 */
+/* 已移除题目描述框上方的装饰线 */
 
 /* 美化答案解析框 */
 .preview-dialog .content-section {
