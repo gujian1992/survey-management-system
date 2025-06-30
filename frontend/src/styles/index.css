@@ -20,6 +20,9 @@
 /* 5. 工具类样式 */
 @import './base/utilities.css';
 
+/* 6. Element Plus 滚动条修复 */
+@import './element-plus-scrollbar-fix.css';
+
 /**
  * 全局应用级样式
  */

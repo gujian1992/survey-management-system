@@ -534,6 +534,75 @@ defineExpose({
   }
 }
 
+/* 第十一层：更激进的隐藏策略 */
+:deep(.el-table .el-scrollbar__bar.is-vertical) {
+  right: -9999px !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  z-index: -9999 !important;
+  display: none !important;
+}
+
+:deep(.el-table .el-scrollbar__bar.is-horizontal) {
+  bottom: -9999px !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  z-index: -9999 !important;
+  display: none !important;
+}
+
+/* 第十二层：强制隐藏所有可能的滚动条 */
+:deep(.el-scrollbar__bar.is-vertical),
+:deep(.el-scrollbar__bar.is-horizontal) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  right: -9999px !important;
+  bottom: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  transform: scale(0) !important;
+}
+
+/* 第十三层：表格容器特殊处理 */
+:deep(.el-table__body-wrapper) {
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+:deep(.el-table__body-wrapper)::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* 第十四层：固定列特殊处理 */
+:deep(.el-table__fixed .el-table__body-wrapper),
+:deep(.el-table__fixed-right .el-table__body-wrapper) {
+  overflow: visible !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+:deep(.el-table__fixed .el-table__body-wrapper)::-webkit-scrollbar,
+:deep(.el-table__fixed-right .el-table__body-wrapper)::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* 第十五层：终极隐藏 - 使用clip-path */
+:deep(.el-scrollbar__bar) {
+  clip-path: polygon(0 0, 0 0, 0 100%, 0 100%) !important;
+  -webkit-clip-path: polygon(0 0, 0 0, 0 100%, 0 100%) !important;
+}
+
 /* 调试模式显示（开发时可启用） */
 /*
 .debug-scrollbar :deep(.el-scrollbar__bar) {

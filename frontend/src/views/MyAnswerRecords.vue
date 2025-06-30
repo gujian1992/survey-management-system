@@ -175,7 +175,7 @@
       </el-table-column>
       
       <!-- 操作 -->
-      <el-table-column label="操作" width="200" fixed="right" align="center">
+      <el-table-column label="操作" width="200" align="center">
         <template #default="{ row }">
           <div class="action-buttons-group">
             <el-button 
@@ -636,6 +636,42 @@ onMounted(async () => {
   overflow-y: auto;
   min-height: 200px;
   max-height: calc(100vh - 400px);
+}
+
+/* 表格列宽优化 */
+:deep(.el-table .el-table__cell) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 操作列特殊处理 */
+:deep(.el-table .el-table__cell:last-child) {
+  min-width: 200px;
+  white-space: normal;
+}
+
+/* 响应式表格处理 */
+@media (max-width: 1200px) {
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+  
+  :deep(.el-table .el-table__cell) {
+    padding: 8px 4px;
+  }
+  
+  .action-buttons-group {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .action-button {
+    min-width: 60px;
+    height: 28px;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
 }
 
 /* 🎯 操作按钮组样式 */
