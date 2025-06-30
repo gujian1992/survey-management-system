@@ -277,6 +277,7 @@ import SearchPanel from '@/components/base/SearchPanel.vue'
 import DataTable from '@/components/base/DataTable.vue'
 import MetricCard from '@/components/statistics/MetricCard.vue'
 import SafeRouterLink from '@/components/SafeRouterLink.vue'
+import { scrollbarDebugger } from '@/utils/scrollbarDebugger.js'
 
 // 组件名称
 defineOptions({
@@ -546,6 +547,27 @@ onMounted(async () => {
     loadUserStats(),
     loadSessions()
   ])
+  
+  // 延迟检测表格滚动条
+  setTimeout(() => {
+    const tableElement = document.querySelector('.data-table-container .el-table')
+    if (tableElement) {
+      console.log('🔍 开始分析表格滚动条...')
+      const analysis = scrollbarDebugger.analyzeTable(tableElement)
+      
+      if (analysis?.recommendations?.length > 0) {
+        console.log('⚠️ 发现滚动条问题，尝试应用修复...')
+        scrollbarDebugger.applyQuickFix(tableElement)
+        
+        // 再次检测修复效果
+        setTimeout(() => {
+          const fixAnalysis = scrollbarDebugger.analyzeTable(tableElement)
+          const summary = scrollbarDebugger.generateSummary()
+          console.log('✅ 修复效果分析:', summary)
+        }, 500)
+      }
+    }
+  }, 1000)
 })
 </script>
 

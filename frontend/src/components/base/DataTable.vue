@@ -373,31 +373,175 @@ defineExpose({
   background: transparent;
 }
 
-/* Element Plus 2.x 终极双滚动条解决方案 */
+/* ==========================================
+   Element Plus 2.10.1 双滚动条终极解决方案
+   基于内部架构深度分析的专业级修复
+   ========================================== */
 
-/* 完全禁用Element Plus的scrollbar组件 */
-:deep(.el-table .el-scrollbar__bar.is-vertical) {
-  right: -20px !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  z-index: -1 !important;
+/* 第一层：Element Plus滚动条组件完全屏蔽 */
+:deep(.el-scrollbar) {
+  /* 保留滚动功能，完全隐藏滚动条视觉 */
+  --el-scrollbar-bg-color: transparent !important;
+  --el-scrollbar-hover-bg-color: transparent !important;
+  --el-scrollbar-thumb-bg-color: transparent !important;
+  --el-scrollbar-opacity: 0 !important;
 }
 
-:deep(.el-table .el-scrollbar__bar.is-horizontal) {
-  bottom: -20px !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  z-index: -1 !important;
-}
-
-/* 强制隐藏所有scrollbar相关元素 */
 :deep(.el-scrollbar__bar) {
+  /* 物理移除滚动条到不可见区域 */
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -9999 !important;
+  position: absolute !important;
+  right: -1000px !important;
+  bottom: -1000px !important;
+  transform: scale(0) translateZ(-1px) !important;
 }
 
 :deep(.el-scrollbar__thumb) {
+  /* 滚动条拖拽块彻底隐藏 */
   display: none !important;
+  opacity: 0 !important;
+  background: transparent !important;
 }
+
+/* 第二层：固定列机制深度控制 */
+:deep(.el-table__fixed),
+:deep(.el-table__fixed-right) {
+  /* 禁用固定列区域的独立滚动容器 */
+  overflow: visible !important;
+  z-index: auto !important;
+}
+
+:deep(.el-table__fixed .el-table__body-wrapper),
+:deep(.el-table__fixed-right .el-table__body-wrapper),
+:deep(.el-table__fixed .el-table__header-wrapper),
+:deep(.el-table__fixed-right .el-table__header-wrapper) {
+  /* 固定列内所有wrapper都不能独立滚动 */
+  overflow: visible !important;
+  scroll-behavior: auto !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+/* 第三层：原生浏览器滚动条控制 */
+:deep(.el-table__body-wrapper) {
+  /* 主体区域滚动条隐藏但保持滚动能力 */
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+
+:deep(.el-table__body-wrapper)::-webkit-scrollbar,
+:deep(.el-table__header-wrapper)::-webkit-scrollbar,
+:deep(.el-scrollbar__wrap)::-webkit-scrollbar {
+  /* Webkit系浏览器滚动条完全隐藏 */
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+/* 第四层：Element Plus内部组件架构控制 */
+:deep(.el-scrollbar__wrap) {
+  /* 滚动包装器保持功能但隐藏视觉 */
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  overflow-x: hidden !important;
+}
+
+:deep(.el-table__fixed .el-scrollbar),
+:deep(.el-table__fixed-right .el-scrollbar),
+:deep(.el-table__fixed .el-scrollbar__bar),
+:deep(.el-table__fixed-right .el-scrollbar__bar) {
+  /* 固定列区域所有滚动相关元素强制隐藏 */
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* 第五层：表格容器级别控制 */
+:deep(.el-table) {
+  /* 确保表格容器本身不产生滚动条 */
+  overflow: visible !important;
+  position: relative !important;
+}
+
+:deep(.el-table__header-wrapper) {
+  /* 表头不滚动 */
+  overflow: visible !important;
+}
+
+/* 第六层：CSS变量级别覆盖 */
+.table-wrapper {
+  /* 使用CSS变量彻底覆盖Element Plus默认设置 */
+  --el-scrollbar-bg-color: transparent;
+  --el-scrollbar-hover-bg-color: transparent;
+  --el-scrollbar-thumb-bg-color: transparent;
+  --el-scrollbar-opacity: 0;
+  --el-table-scrollbar-bg-color: transparent;
+}
+
+/* 第七层：全局滚动条屏蔽（终极方案） */
+:deep(*::-webkit-scrollbar) {
+  /* 任何可能的webkit滚动条都屏蔽 */
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  background: transparent !important;
+}
+
+:deep(*) {
+  /* 任何元素的滚动条都使用无滚动条模式 */
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+/* 第八层：性能和兼容性优化 */
+:deep(.el-table--scrollable-y .el-table__body-wrapper) {
+  /* 纵向滚动表格特殊处理 */
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: none !important;
+}
+
+:deep(.el-table--scrollable-x .el-table__body-wrapper) {
+  /* 横向滚动表格特殊处理 */
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+}
+
+/* 第九层：硬件加速优化 */
+:deep(.el-table__body),
+:deep(.el-table__fixed),
+:deep(.el-table__fixed-right) {
+  /* 使用GPU加速提升滚动性能 */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* 第十层：响应式滚动条隐藏 */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  /* 专门针对Webkit内核的隐藏 */
+  :deep(.el-table)::-webkit-scrollbar,
+  :deep(.el-scrollbar__wrap)::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+  }
+}
+
+/* 调试模式显示（开发时可启用） */
+/*
+.debug-scrollbar :deep(.el-scrollbar__bar) {
+  display: block !important;
+  background: rgba(255, 0, 0, 0.3) !important;
+  opacity: 1 !important;
+}
+*/
 
 /* 确保表格主体使用原生滚动 */
 :deep(.el-table__body-wrapper) {

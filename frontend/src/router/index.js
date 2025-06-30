@@ -27,6 +27,7 @@ const StartAnswer = () => {
 const AnswerQuestion = () => import('../views/AnswerQuestion.vue')
 const MyAnswerRecords = () => import('../views/MyAnswerRecords.vue')
 const SystemUpgrade = () => import('../views/SystemUpgrade.vue')
+const TableDebug = () => import('../views/TableDebug.vue')
 
 const routes = [
   {
@@ -98,6 +99,14 @@ const routes = [
     path: '/system-upgrade',
     name: 'SystemUpgrade',
     component: SystemUpgrade,
+    meta: { requiresAuth: true }
+  },
+  
+  // 调试页面
+  {
+    path: '/table-debug',
+    name: 'TableDebug',
+    component: TableDebug,
     meta: { requiresAuth: true }
   },
   
