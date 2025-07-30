@@ -38,6 +38,9 @@ public class ScoringRecord {
     @Schema(description = "评分", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer score;
     
+    @Schema(description = "满分", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer maxScore;
+    
     @Schema(description = "评分反馈")
     private String comment;
     

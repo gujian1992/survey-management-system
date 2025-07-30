@@ -48,6 +48,13 @@
           >
             数据统计
           </div>
+          <div 
+            class="menu-item" 
+            :class="{ active: $route.path === '/test-console' }"
+            @click="navigateTo('/test-console')"
+          >
+            🧪 测试控制台
+          </div>
         </template>
         
         <!-- 普通用户菜单 -->
@@ -61,8 +68,8 @@
           </div>
           <div 
             class="menu-item" 
-            :class="{ active: $route.path === '/my-records' }"
-            @click="navigateTo('/my-records')"
+            :class="{ active: $route.path === '/my-answer-records' }"
+            @click="navigateTo('/my-answer-records')"
           >
             我的记录
           </div>
@@ -94,9 +101,7 @@
       </div>
       
       <div class="main-content">
-        <RouteTransitionMonitor>
-          <router-view />
-        </RouteTransitionMonitor>
+        <router-view />
       </div>
     </div>
   </div>
@@ -114,7 +119,7 @@ import {
   Timer,
   DataAnalysis
 } from '@element-plus/icons-vue'
-import RouteTransitionMonitor from '@/components/RouteTransitionMonitor.vue'
+
 import { SimplePremiumDialog } from '@/utils/simplePremiumDialog.js'
 import { ElMessage } from 'element-plus'
 import { onMounted, nextTick } from 'vue'
@@ -161,52 +166,58 @@ onMounted(() => {
 .app-container {
   display: flex;
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  overflow: hidden;
 }
 
 .sidebar {
   width: 250px;
-  background: rgba(48, 65, 86, 0.95);
-  color: white;
+  background: #304156;
   display: flex;
   flex-direction: column;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
 .logo {
-  padding: 20px;
-  text-align: center;
-  border-bottom: 1px solid #434c5e;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .logo h2 {
   margin: 0;
-  font-size: 18px;
   color: white;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .menu-container {
   flex: 1;
-  padding: 20px 0;
+  padding: 16px 0;
+  overflow-y: auto;
 }
 
 .menu-item {
-  padding: 12px 20px;
-  cursor: pointer;
-  transition: all 0.2s;
-  border-left: 3px solid transparent;
+  height: 50px;
+  line-height: 50px;
   font-size: 14px;
+  color: #bfcbd9;
+  padding: 0 20px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s;
+  white-space: nowrap;
 }
 
 .menu-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateX(2px);
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .menu-item.active {
-  background-color: rgba(64, 158, 255, 0.2);
-  border-left-color: #409EFF;
-  color: #409EFF;
+  color: white;
+  background: #1890ff;
 }
 
 .main-container {
@@ -217,84 +228,65 @@ onMounted(() => {
 }
 
 .header {
-  height: 60px;
-  background-color: #fff;
-  border-bottom: 1px solid #dcdfe6;
+  height: 64px;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 0 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0 24px;
+  flex-shrink: 0;
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 8px;
 }
 
 .user-name {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #303133;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 4px;
   cursor: pointer;
-  padding: 10px 16px;
-  border-radius: 8px;
-  transition: background-color 0.2s;
-  font-size: 14px;
-  font-weight: 500;
-  min-width: 120px;
-  white-space: nowrap;
-}
-
-.user-name .el-icon {
-  font-size: 18px;
-  color: #667eea;
-  flex-shrink: 0;
+  transition: all 0.3s;
+  color: #666;
 }
 
 .user-name:hover {
-  background-color: #f5f7fa;
-}
-
-.role-badge {
-  color: #409EFF;
-  font-weight: 500;
+  background: #f5f7fa;
 }
 
 .main-content {
   flex: 1;
-  background-color: #f5f5f5;
-  padding: 20px;
+  overflow-y: auto;
+  background: #f0f2f5;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .app-container {
-    flex-direction: column;
-  }
-  
-  .sidebar {
-    width: 100%;
-    height: auto;
-  }
-  
-  .menu-container {
-    display: flex;
-    overflow-x: auto;
-    padding: 10px;
-  }
-  
-  .menu-item {
-    white-space: nowrap;
-    min-width: 80px;
-    text-align: center;
-  }
+/* Element Plus 覆盖样式 */
+:deep(.el-dropdown-menu) {
+  padding: 4px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+:deep(.el-dropdown-menu__item) {
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+:deep(.el-dropdown-menu__item:not(.is-disabled):hover) {
+  background: #f5f7fa !important;
+  color: #1890ff !important;
+}
+
+:deep(.el-dropdown-menu__item i) {
+  margin-right: 8px !important;
+  font-size: 16px !important;
 }
 </style>
 

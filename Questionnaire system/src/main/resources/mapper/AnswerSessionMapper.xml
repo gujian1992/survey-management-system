@@ -103,4 +103,38 @@
           AND deleted = 0
     </select>
 
+    <!-- 手动更新会话状态数据 -->
+    <update id="updateStateData">
+        UPDATE answer_session 
+        SET state_data = JSON_OBJECT(
+            'questionIds', JSON_ARRAY(
+                <foreach collection="stateData.questionIds" item="id" separator=",">
+                    #{id}
+                </foreach>
+            ),
+            'selectedTypes', JSON_ARRAY(
+                <foreach collection="stateData.selectedTypes" item="type" separator=",">
+                    #{type}
+                </foreach>
+            )
+        )
+        WHERE id = #{sessionId}
+    </update>
+
+    <!-- 从状态数据中获取题目ID列表 -->
+    <select id="getQuestionIdsFromStateData" resultType="java.lang.Long">
+        SELECT JSON_UNQUOTE(JSON_EXTRACT(state_data, CONCAT('$.questionIds[', numbers.n, ']'))) as questionId
+        FROM answer_session s
+        JOIN (
+            SELECT 0 as n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 
+            UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
+            UNION SELECT 10 UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14
+            UNION SELECT 15 UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19
+        ) numbers 
+        WHERE s.session_code = #{sessionCode}
+        AND s.deleted = 0
+        AND JSON_UNQUOTE(JSON_EXTRACT(s.state_data, CONCAT('$.questionIds[', numbers.n, ']'))) IS NOT NULL
+        ORDER BY numbers.n
+    </select>
+
 </mapper>

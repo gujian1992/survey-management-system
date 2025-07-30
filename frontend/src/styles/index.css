@@ -1,40 +1,42 @@
 /**
- * 全局样式入口文件
- * 按顺序导入所有基础样式，确保样式层叠的正确性
- */
-
-/* 1. CSS变量和主题 - 最先加载 */
-@import './base/variables.css';
-
-/* 2. 样式重置和基础样式 */
-@import './base/reset.css';
-
-/* 3. 组件样式 - 按需加载 */
-@import './components/form.css';
-@import './components/button.css';
-@import './components/card.css';
-
-/* 4. Element Plus 样式覆盖 */
-@import './themes/element-plus-override.css';
-
-/* 5. 工具类样式 */
-@import './base/utilities.css';
-
-/* 6. Element Plus 滚动条修复 */
-@import './element-plus-scrollbar-fix.css';
-
-/**
  * 全局应用级样式
  */
+
+/* 全局滚动条样式强制覆盖 */
+html {
+  overflow-y: auto !important;
+}
+
+html * {
+  scrollbar-width: thin !important;
+  scrollbar-color: #cbd5e0 #f7fafc !important;
+}
+
+html ::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+html ::-webkit-scrollbar-track {
+  background: #f7fafc !important;
+  border-radius: 4px !important;
+}
+
+html ::-webkit-scrollbar-thumb {
+  background: #cbd5e0 !important;
+  border-radius: 4px !important;
+  transition: background-color 0.3s ease !important;
+}
+
+html ::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0 !important;
+}
+
+/* 应用级样式 */
 #app {
   min-height: 100vh;
   background: var(--gradient-bg);
-}
-
-/* 全局滚动条样式增强 */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-primary) var(--color-gray-100);
+  overflow-x: hidden;
 }
 
 /* 全局动画性能优化 */
@@ -48,4 +50,4 @@
 .focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
-} 
+}

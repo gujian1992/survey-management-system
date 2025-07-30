@@ -8,8 +8,8 @@ import { ErrorCode, getErrorMessage } from '@/constants/errorCode'
  * 请求配置
  */
 const config = {
-  // 基础URL
-  baseURL: '/api',
+  // 基础URL - 使用正确的后端端口8080
+  baseURL: 'http://localhost:8080/api',
   // 超时时间
   timeout: 10000,
   // 重试次数
@@ -90,16 +90,16 @@ const retryRequest = async (error) => {
   const config = error.config
   // 设置用于跟踪重试次数的变量
   config.__retryCount = config.__retryCount || 0
-  
+
   if (config.__retryCount >= config.retryTimes) {
     return Promise.reject(error)
   }
-  
+
   config.__retryCount += 1
-  
+
   // 延迟请求
   await new Promise(resolve => setTimeout(resolve, config.retryDelay))
-  
+
   // 重新发起请求
   return request(config)
 }
@@ -112,15 +112,15 @@ request.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    
+
     // 添加时间戳防止缓存
     if (config.method === 'get') {
       config.params = { ...config.params, _t: Date.now() }
     }
-    
+
     // 配置重试次数
     config.retryTimes = config.retryTimes || config.retryTimes
-    
+
     // 检查缓存（只对GET请求缓存）
     if (config.method === 'get' && !config.skipCache) {
       const cacheKey = generateCacheKey(config)
@@ -130,12 +130,12 @@ request.interceptors.request.use(
         config.cachedData = cached.data
       }
     }
-    
+
     // 显示loading（除非明确禁用）
     if (!config.hideLoading) {
       showLoading()
     }
-    
+
     return config
   },
   error => {
@@ -148,7 +148,7 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   response => {
     hideLoading()
-    
+
     // 如果使用了缓存，直接返回缓存数据
     if (response.config.useCache) {
       return Promise.resolve({
@@ -168,12 +168,12 @@ request.interceptors.response.use(
     }
 
     const res = response.data
-    
+
     // 处理成功响应
     if (res.code === ErrorCode.SUCCESS) {
       return res
     }
-    
+
     // 处理特定错误码
     switch (res.code) {
       case ErrorCode.UNAUTHORIZED:
@@ -182,37 +182,37 @@ request.interceptors.response.use(
         // 清除token并跳转到登录页
         handleUnauthorized()
         break
-        
+
       case ErrorCode.FORBIDDEN:
         config.showError && ElMessage.error('没有权限访问')
         break
-        
+
       case ErrorCode.NOT_FOUND:
         return { ...res, data: null }
-        
+
       case ErrorCode.QUESTIONNAIRE_NOT_FOUND:
       case ErrorCode.QUESTIONNAIRE_EXPIRED:
       case ErrorCode.QUESTIONNAIRE_NOT_PUBLISHED:
       case ErrorCode.QUESTIONNAIRE_ALREADY_SUBMITTED:
         config.showError && ElMessage.warning(getErrorMessage(res.code))
         break
-        
+
       default:
         // 其他错误码统一处理
         config.showError && ElMessage.error(res.message || getErrorMessage(res.code))
     }
-    
+
     return Promise.reject(new Error(res.message || '请求失败'))
   },
   async error => {
     hideLoading()
-    
+
     // 处理请求超时
     if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
       // 尝试重试请求
       return retryRequest(error)
     }
-    
+
     // 处理网络错误、超时等
     if (error.response) {
       const status = error.response.status
@@ -220,19 +220,19 @@ request.interceptors.response.use(
         case 401:
           handleUnauthorized()
           break
-          
+
         case 403:
           config.showError && ElMessage.error('没有权限访问')
           break
-          
+
         case 404:
           config.showError && ElMessage.error('请求的资源不存在')
           break
-          
+
         case 500:
           config.showError && ElMessage.error('服务器内部错误')
           break
-          
+
         default:
           config.showError && ElMessage.error('网络错误')
       }
@@ -241,7 +241,7 @@ request.interceptors.response.use(
     } else {
       config.showError && ElMessage.error('网络异常，请检查网络连接')
     }
-    
+
     return Promise.reject(error)
   }
 )
@@ -252,13 +252,13 @@ request.interceptors.response.use(
 const handleUnauthorized = () => {
   const userStore = useUserStore()
   const router = useRouter()
-  
+
   // 清除用户信息
   userStore.logout()
-  
+
   // 跳转到登录页
   router.push('/login')
-  
+
   config.showError && ElMessage.error('登录已过期，请重新登录')
 }
 

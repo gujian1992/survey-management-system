@@ -324,4 +324,44 @@ public class QuestionBankServiceImpl extends ServiceImpl<QuestionBankMapper, Que
         // 批量保存
         return saveBatch(questions);
     }
+    
+    @Override
+    public List<QuestionBank> getQuestionList(Integer type, Integer status, String difficulty, String keyword) {
+        LambdaQueryWrapper<QuestionBank> queryWrapper = new LambdaQueryWrapper<>();
+        
+        // 添加查询条件
+        if (type != null) {
+            queryWrapper.eq(QuestionBank::getType, type);
+        }
+        
+        if (status != null) {
+            queryWrapper.eq(QuestionBank::getStatus, status);
+        }
+        
+        if (difficulty != null && !difficulty.trim().isEmpty()) {
+            try {
+                Integer difficultyValue = Integer.parseInt(difficulty.trim());
+                queryWrapper.eq(QuestionBank::getDifficulty, difficultyValue);
+            } catch (NumberFormatException e) {
+                log.warn("难度参数格式错误: {}", difficulty);
+            }
+        }
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            queryWrapper.like(QuestionBank::getContent, keyword.trim())
+                       .or()
+                       .like(QuestionBank::getOptions, keyword.trim());
+        }
+        
+        // 按创建时间倒序，限制返回数量以防止内存溢出
+        queryWrapper.orderByDesc(QuestionBank::getCreateTime)
+                   .last("LIMIT 1000"); // 限制最多返回1000条
+        
+        List<QuestionBank> questions = list(queryWrapper);
+        
+        // 处理题目信息
+        questions.forEach(this::processQuestionInfo);
+        
+        return questions;
+    }
 } 

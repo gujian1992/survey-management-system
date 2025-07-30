@@ -1,14 +1,37 @@
 /**
- * 答题会话状态常量
+ * 答题会话状态
  */
 export const SESSION_STATUS = {
-  // 基础状态
-  NOT_STARTED: 0,    // 未开始
-  IN_PROGRESS: 1,    // 进行中
-  COMPLETED: 2,      // 已完成
-  TIMEOUT: 3,        // 已超时
-  ABANDONED: 4,      // 已放弃
-  ERROR: 5           // 异常结束
+  NOT_STARTED: 'NOT_STARTED',  // 未开始
+  ONGOING: 'ONGOING',          // 进行中
+  FINISHED: 'FINISHED',        // 已完成
+  TIMEOUT: 'TIMEOUT',          // 已超时
+  ABANDONED: 'ABANDONED',      // 已放弃
+  ERROR: 'ERROR'              // 异常结束
+}
+
+/**
+ * 答题会话状态文本
+ */
+export const SESSION_STATUS_TEXT = {
+  [SESSION_STATUS.NOT_STARTED]: '未开始',
+  [SESSION_STATUS.ONGOING]: '进行中',
+  [SESSION_STATUS.FINISHED]: '已完成',
+  [SESSION_STATUS.TIMEOUT]: '已超时',
+  [SESSION_STATUS.ABANDONED]: '已放弃',
+  [SESSION_STATUS.ERROR]: '异常结束'
+}
+
+/**
+ * 答题会话状态类型
+ */
+export const SESSION_STATUS_TYPE = {
+  [SESSION_STATUS.NOT_STARTED]: 'info',
+  [SESSION_STATUS.ONGOING]: 'primary',
+  [SESSION_STATUS.FINISHED]: 'success',
+  [SESSION_STATUS.TIMEOUT]: 'warning',
+  [SESSION_STATUS.ABANDONED]: 'danger',
+  [SESSION_STATUS.ERROR]: 'danger'
 }
 
 /**
@@ -16,8 +39,8 @@ export const SESSION_STATUS = {
  */
 export const SESSION_STATUS_NAMES = {
   [SESSION_STATUS.NOT_STARTED]: '未开始',
-  [SESSION_STATUS.IN_PROGRESS]: '进行中',
-  [SESSION_STATUS.COMPLETED]: '已完成',
+  [SESSION_STATUS.ONGOING]: '进行中',
+  [SESSION_STATUS.FINISHED]: '已完成',
   [SESSION_STATUS.TIMEOUT]: '已超时',
   [SESSION_STATUS.ABANDONED]: '已放弃',
   [SESSION_STATUS.ERROR]: '异常结束'
@@ -28,8 +51,8 @@ export const SESSION_STATUS_NAMES = {
  */
 export const SESSION_STATUS_COLORS = {
   [SESSION_STATUS.NOT_STARTED]: '#909399',
-  [SESSION_STATUS.IN_PROGRESS]: '#409EFF',
-  [SESSION_STATUS.COMPLETED]: '#67C23A',
+  [SESSION_STATUS.ONGOING]: '#409EFF',
+  [SESSION_STATUS.FINISHED]: '#67C23A',
   [SESSION_STATUS.TIMEOUT]: '#E6A23C',
   [SESSION_STATUS.ABANDONED]: '#F56C6C',
   [SESSION_STATUS.ERROR]: '#F56C6C'

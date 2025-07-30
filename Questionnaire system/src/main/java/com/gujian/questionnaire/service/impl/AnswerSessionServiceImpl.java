@@ -41,11 +41,12 @@ import java.util.HashMap;
  */
 @Slf4j
 @Service
-public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, AnswerSession> implements AnswerSessionService {
+public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, AnswerSession>
+        implements AnswerSessionService {
 
     @Autowired
     private AnswerSessionMapper answerSessionMapper;
-    
+
     @Autowired
     private QuestionBankService questionBankService;
 
@@ -70,40 +71,60 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
             updateById(existingSession);
             log.info("用户{}开始新会话，自动放弃旧会话: {}", userId, existingSession.getSessionCode());
         }
-        
+
         // 检查题库中是否有足够的题目
         List<QuestionBank> availableQuestions = questionBankService.getRandomQuestionsFromTypes(
-            startAnswerDTO.getQuestionTypes(), startAnswerDTO.getQuestionCount());
-        
+                startAnswerDTO.getQuestionTypes(), startAnswerDTO.getQuestionCount());
+
         if (availableQuestions.size() < startAnswerDTO.getQuestionCount()) {
             throw new BusinessException(ErrorCode.SESSION_INSUFFICIENT_QUESTIONS, "题库中可用题目不足");
         }
-        
+
         // 创建新会话
         AnswerSession session = new AnswerSession();
         session.setUserId(userId);
         session.setSessionCode(generateSessionCode());
         session.setQuestionType(0); // 使用0表示混合题型
-        
-        // 将题目ID列表存储到questionTypes字段（重用该字段）
-        List<Integer> questionIds = availableQuestions.stream()
-                .map(q -> q.getId().intValue())
+
+        // 将题目ID列表存储到stateData中
+        List<Long> questionIds = availableQuestions.stream()
+                .map(QuestionBank::getId)
                 .collect(Collectors.toList());
-        session.setQuestionTypes(questionIds);
-        
+
+        // 暂时不设置stateData，等保存完成后再手动更新
+        session.setStateData(null);
+
         session.setTotalCount(startAnswerDTO.getQuestionCount());
         // session.setCurrentCount(0); // 移除，改为前端计算
         session.setTimeoutMinutes(startAnswerDTO.getTimeoutMinutes());
         session.setStartTime(LocalDateTime.now());
         // session.setLastActivityTime(LocalDateTime.now()); // 移除实时状态跟踪
         session.setStatus(1); // 进行中
-        
+
         // 计算理论总分
         int totalScore = availableQuestions.stream().mapToInt(QuestionBank::getScore).sum();
         session.setTotalScore(totalScore);
-        
+
         save(session);
-        
+
+        // 手动设置 stateData 到数据库（解决 JacksonTypeHandler 可能的问题）
+        try {
+            Map<String, Object> stateData = new HashMap<>();
+            stateData.put("questionIds", questionIds);
+            stateData.put("selectedTypes", startAnswerDTO.getQuestionTypes());
+
+            log.info("准备更新 stateData: sessionId={}, questionIds={}, selectedTypes={}",
+                    session.getId(), questionIds, startAnswerDTO.getQuestionTypes());
+            answerSessionMapper.updateStateData(session.getId(), stateData);
+            log.info("手动更新 stateData 成功: sessionId={}", session.getId());
+
+            // 验证更新结果
+            List<Long> retrievedIds = answerSessionMapper.getQuestionIdsFromStateData(session.getSessionCode());
+            log.info("验证数据存储: 获取到的题目ID列表: {}", retrievedIds);
+        } catch (Exception e) {
+            log.error("手动更新 stateData 失败: {}", e.getMessage(), e);
+        }
+
         log.info("用户{}开始答题会话: {}", userId, session.getSessionCode());
         return session;
     }
@@ -113,17 +134,17 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
         // 查找用户最近的进行中会话
         QueryWrapper<AnswerSession> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId)
-                   .eq("status", 1) // 进行中
-                   .orderByDesc("start_time")
-                   .last("LIMIT 1");
-        
+                .eq("status", 1) // 进行中
+                .orderByDesc("start_time")
+                .last("LIMIT 1");
+
         AnswerSession session = getOne(queryWrapper);
-        
+
         // 如果找到了会话，检查是否已超时
         if (session != null) {
             LocalDateTime now = LocalDateTime.now();
             long timeSinceStart = java.time.Duration.between(session.getStartTime(), now).toMinutes();
-            
+
             // 如果已超时，自动更新状态
             if (session.getTimeoutMinutes() != null && timeSinceStart > session.getTimeoutMinutes()) {
                 session.setStatus(3); // 已超时
@@ -132,31 +153,31 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
                 return null; // 返回null表示没有可用的会话
             }
         }
-        
+
         return session;
     }
 
     // 移除复杂的状态管理方法
     // @Override
     // public void saveSessionState(Long userId, Map<String, Object> stateData) {
-    //     // 改为前端状态管理，不需要后端持久化
+    // // 改为前端状态管理，不需要后端持久化
     // }
 
     // @Override
     // public void updateLastActivityTime(String sessionCode) {
-    //     // 移除实时活动时间跟踪，简化状态管理
+    // // 移除实时活动时间跟踪，简化状态管理
     // }
 
     @Override
     public AnswerSession getSessionByCode(String sessionCode) {
         QueryWrapper<AnswerSession> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("session_code", sessionCode);
-        
+
         AnswerSession session = getOne(queryWrapper);
         if (session == null) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
-        
+
         return session;
     }
 
@@ -167,11 +188,11 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
         if (!session.getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.SESSION_PERMISSION_DENIED);
         }
-        
+
         if (session.getStatus() != 1) {
             throw new BusinessException(ErrorCode.SESSION_ALREADY_FINISHED);
         }
-        
+
         session.setStatus(2); // 已完成
         session.setEndTime(LocalDateTime.now());
         return updateById(session);
@@ -198,19 +219,19 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
         if (session == null) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
-        
+
         // 状态流转检查
         if (!isValidStatusTransition(session.getStatus(), status)) {
             throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION);
         }
-        
+
         // 更新状态
         session.setStatus(status);
         if (status == 2 || status == 3 || status == 4 || status == 5) { // 已完成/已超时/已放弃/异常结束
             session.setEndTime(LocalDateTime.now());
         }
         updateById(session);
-        
+
         log.info("更新会话{}状态: {} -> {}", sessionCode, session.getStatus(), status);
     }
 
@@ -221,7 +242,8 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
     }
 
     @Override
-    public IPage<AnswerSession> getAllSessionPage(int current, int size, String userName, Integer status, String startTime, String endTime) {
+    public IPage<AnswerSession> getAllSessionPage(int current, int size, String userName, Integer status,
+            String startTime, String endTime) {
         Page<AnswerSession> page = new Page<>(current, size);
         return answerSessionMapper.selectSessionPageWithFilters(page, userName, status, startTime, endTime);
     }
@@ -238,24 +260,27 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
 
     // 移除单题提交方法，改为批量提交
     // @Override
-    // public void submitAnswer(Integer sessionId, SubmitAnswerDTO submitAnswerDTO) {
-    //     // 改为前端管理进度，最终批量提交答案
+    // public void submitAnswer(Integer sessionId, SubmitAnswerDTO submitAnswerDTO)
+    // {
+    // // 改为前端管理进度，最终批量提交答案
     // }
 
     // 移除复杂的实时状态管理方法
     // @Override
-    // public Map<String, Object> processHeartbeat(Integer sessionId, Long userId, Map<String, Object> heartbeatData) {
-    //     // 移除心跳机制，简化状态管理
+    // public Map<String, Object> processHeartbeat(Integer sessionId, Long userId,
+    // Map<String, Object> heartbeatData) {
+    // // 移除心跳机制，简化状态管理
     // }
 
     // @Override
-    // public void markAbnormalExit(Integer sessionId, Long userId, Map<String, Object> exitData) {
-    //     // 简化异常处理
+    // public void markAbnormalExit(Integer sessionId, Long userId, Map<String,
+    // Object> exitData) {
+    // // 简化异常处理
     // }
 
     // @Override
     // public boolean updateSessionProgress(Long sessionId) {
-    //     // 改为前端计算进度
+    // // 改为前端计算进度
     // }
 
     @Override
@@ -264,10 +289,10 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
         if (session == null || session.getStatus() != 1) {
             return true;
         }
-        
+
         LocalDateTime now = LocalDateTime.now();
         long timeSinceStart = java.time.Duration.between(session.getStartTime(), now).toMinutes();
-        
+
         return session.getTimeoutMinutes() != null && timeSinceStart > session.getTimeoutMinutes();
     }
 
@@ -276,12 +301,12 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
         if (extendMinutes <= 0) {
             throw new BusinessException(ErrorCode.PARAMETER_INVALID, "延长时间必须大于0");
         }
-        
+
         AnswerSession session = getSessionByCode(sessionCode);
         if (session == null || session.getStatus() != 1) {
             return false;
         }
-        
+
         session.setTimeoutMinutes(session.getTimeoutMinutes() + extendMinutes);
         return updateById(session);
     }
@@ -292,7 +317,7 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
         if (session == null) {
             return false;
         }
-        
+
         session.setStatus(2); // 已完成
         session.setEndTime(LocalDateTime.now());
         return updateById(session);
@@ -301,16 +326,16 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
     @Override
     public int batchCheckTimeout() {
         LocalDateTime now = LocalDateTime.now();
-        
+
         // 查找所有可能超时的会话
         QueryWrapper<AnswerSession> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("status", 1) // 进行中
-                   .isNotNull("timeout_minutes")
-                   .lt("start_time", now.minusMinutes(1440)); // 最多查找24小时前的会话
-        
+                .isNotNull("timeout_minutes")
+                .lt("start_time", now.minusMinutes(1440)); // 最多查找24小时前的会话
+
         List<AnswerSession> sessions = list(queryWrapper);
         int count = 0;
-        
+
         for (AnswerSession session : sessions) {
             long timeSinceStart = java.time.Duration.between(session.getStartTime(), now).toMinutes();
             if (timeSinceStart > session.getTimeoutMinutes()) {
@@ -320,7 +345,7 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
                 count++;
             }
         }
-        
+
         return count;
     }
 
@@ -330,12 +355,12 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
         if (session == null) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
-        
+
         // 只有异常结束的会话可以恢复
         if (session.getStatus() != 5) {
             throw new BusinessException(ErrorCode.SESSION_CANNOT_RESUME);
         }
-        
+
         // 检查是否已超时
         LocalDateTime now = LocalDateTime.now();
         long timeSinceStart = java.time.Duration.between(session.getStartTime(), now).toMinutes();
@@ -344,12 +369,12 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
             updateById(session);
             throw new BusinessException(ErrorCode.SESSION_TIMEOUT);
         }
-        
+
         // 恢复会话
         session.setStatus(1); // 进行中
         // session.setLastActivityTime(now); // 移除lastActivityTime字段
         updateById(session);
-        
+
         return session;
     }
 
@@ -377,11 +402,13 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
      */
     private boolean isValidStatusTransition(Integer currentStatus, Integer newStatus) {
         // 未开始 -> 进行中
-        if (currentStatus == 0 && newStatus == 1) return true;
-        
+        if (currentStatus == 0 && newStatus == 1)
+            return true;
+
         // 进行中 -> 已完成/已超时/已放弃/异常结束
-        if (currentStatus == 1 && (newStatus == 2 || newStatus == 3 || newStatus == 4 || newStatus == 5)) return true;
-        
+        if (currentStatus == 1 && (newStatus == 2 || newStatus == 3 || newStatus == 4 || newStatus == 5))
+            return true;
+
         // 其他所有状态流转都是无效的
         return false;
     }
@@ -400,11 +427,11 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
         if (session.getTimeoutMinutes() == null) {
             return -1; // 无限时间
         }
-        
+
         LocalDateTime now = LocalDateTime.now();
         long timeSinceStart = java.time.Duration.between(session.getStartTime(), now).toMinutes();
         long remaining = session.getTimeoutMinutes() - timeSinceStart;
-        
+
         return Math.max(0, remaining);
     }
 
@@ -448,7 +475,7 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
     @Override
     public QuestionVO getQuestionByIndex(String sessionCode, Integer index) {
         log.info("获取题目: sessionCode={}, index={}", sessionCode, index);
-        
+
         // 获取会话信息
         AnswerSession session = answerSessionMapper.selectBySessionCode(sessionCode);
         if (session == null) {
@@ -456,9 +483,9 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
 
-        log.info("会话信息: id={}, questionTypes={}, totalCount={}", 
-                session.getId(), 
-                session.getQuestionTypes(), 
+        log.info("会话信息: id={}, questionTypes={}, totalCount={}",
+                session.getId(),
+                session.getQuestionTypes(),
                 session.getTotalCount());
 
         // 检查题目索引
@@ -467,50 +494,21 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
             throw new BusinessException(ErrorCode.INVALID_QUESTION_INDEX);
         }
 
-        // 获取题目信息
-        List<Integer> questionTypes = session.getQuestionTypes();
-        log.info("从实体类获取的题目列表: {}", questionTypes);
+        // 从数据库中直接获取题目ID列表
+        List<Long> questionIds = answerSessionMapper.getQuestionIdsFromStateData(sessionCode);
+        log.info("从数据库直接获取到题目ID列表: {}", questionIds);
 
-        // 如果 JacksonTypeHandler 没有正确解析，手动解析 JSON 字符串
-        if (questionTypes == null || questionTypes.isEmpty()) {
-            // 尝试从 stateData 中获取题目列表
-            Map<String, Object> stateData = session.getStateData();
-            if (stateData != null && stateData.containsKey("questionTypes")) {
-                Object questionTypesObj = stateData.get("questionTypes");
-                if (questionTypesObj instanceof List) {
-                    questionTypes = (List<Integer>) questionTypesObj;
-                    log.info("从 stateData 中获取到题目列表: {}", questionTypes);
-                }
-            }
-            
-            // 如果还是空，直接查询数据库原始字段值并手动解析
-            if (questionTypes == null || questionTypes.isEmpty()) {
-                log.warn("JacksonTypeHandler 解析失败，尝试手动解析 JSON");
-                String questionTypesJson = answerSessionMapper.selectQuestionTypesJson(sessionCode);
-                log.info("从数据库获取的原始 JSON: {}", questionTypesJson);
-                
-                if (questionTypesJson != null && !questionTypesJson.trim().isEmpty()) {
-                    try {
-                        questionTypes = JsonUtils.parseList(questionTypesJson, Integer.class);
-                        log.info("手动解析后的题目列表: {}", questionTypes);
-                    } catch (Exception e) {
-                        log.error("手动解析 JSON 失败: {}", e.getMessage(), e);
-                    }
-                }
-            }
-            
-            if (questionTypes == null || questionTypes.isEmpty()) {
-                log.error("会话题目列表为空: sessionCode={}", sessionCode);
-                throw new BusinessException(ErrorCode.QUESTION_NOT_FOUND);
-            }
+        if (questionIds == null || questionIds.isEmpty()) {
+            log.error("会话题目ID列表为空: sessionCode={}", sessionCode);
+            throw new BusinessException(ErrorCode.QUESTION_NOT_FOUND);
         }
 
-        if (index >= questionTypes.size()) {
-            log.error("题目索引超出范围: index={}, size={}", index, questionTypes.size());
+        if (index >= questionIds.size()) {
+            log.error("题目索引超出范围: index={}, size={}", index, questionIds.size());
             throw new BusinessException(ErrorCode.INVALID_QUESTION_INDEX);
         }
 
-        Integer questionId = questionTypes.get(index);
+        Long questionId = questionIds.get(index);
         log.info("获取到的题目ID: {}", questionId);
 
         if (questionId == null) {
@@ -561,4 +559,4 @@ public class AnswerSessionServiceImpl extends ServiceImpl<AnswerSessionMapper, A
         session.setEndTime(LocalDateTime.now());
         answerSessionMapper.updateById(session);
     }
-} 
+}

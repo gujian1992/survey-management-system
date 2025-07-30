@@ -29,6 +29,24 @@ public class QuestionBankController {
     @Autowired
     private QuestionBankService questionBankService;
 
+    @GetMapping("/list")
+    @Operation(summary = "获取题库列表（无分页）")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<List<QuestionBank>> getQuestionList(
+            @Parameter(description = "题型") @RequestParam(required = false) Integer type,
+            @Parameter(description = "状态") @RequestParam(required = false) Integer status,
+            @Parameter(description = "难度") @RequestParam(required = false) String difficulty,
+            @Parameter(description = "关键词") @RequestParam(required = false) String keyword) {
+        
+        log.info("题库列表查询参数: type={}, status={}, difficulty={}, keyword={}", type, status, difficulty, keyword);
+        
+        List<QuestionBank> result = questionBankService.getQuestionList(type, status, difficulty, keyword);
+        
+        log.info("查询结果: 总数={}", result.size());
+        
+        return Result.success(result);
+    }
+
     @GetMapping("/page")
     @Operation(summary = "分页查询题库")
     @PreAuthorize("hasRole('ADMIN')")

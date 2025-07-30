@@ -295,7 +295,15 @@ defineOptions({
 // 响应式数据
 const records = ref([])
 const recordsList = ref([])
-const scoringStats = ref({})
+const scoringStats = ref({
+  pendingCount: 0,
+  completedCount: 0,
+  pendingPercentage: 0,
+  completedPercentage: 0,
+  averageScore: 0,
+  dailyScored: 0,
+  dailyGrowth: 0
+})
 const loading = ref(false)
 const scoring = ref(false)
 const showScoringDialog = ref(false)
@@ -329,6 +337,15 @@ const pagination = reactive({
 const scoringForm = reactive({
   score: null,
   comment: ''
+})
+
+// 搜索表单
+const searchForm = reactive({
+  keyword: '',
+  scoringStatus: '',
+  questionType: '',
+  scoreRange: '',
+  dateRange: []
 })
 
 // 计算属性
@@ -380,21 +397,27 @@ const paginatedRecords = computed(() => {
 const getQuestionTypeName = (type) => QUESTION_TYPE_NAMES[type] || '未知'
 const getQuestionTypeColor = (type) => QUESTION_TYPE_COLORS[type] || '#909399'
 
-const formatDateTime = (dateStr) => {
-  return new Date(dateStr).toLocaleString('zh-CN')
-}
+import { formatDateTime } from '@/utils/format'
 
 // 主要方法
 const loadRecords = async () => {
   try {
     loading.value = true
     const response = await answerRecordApi.getRecordsForScoring({
-      page: 1,
-      size: 1000
+      page: pagination.current,
+      size: pagination.size,
+      scoringStatus: filters.scoringStatus,
+      questionType: filters.questionType,
+      scoreRange: filters.scoreRange,
+      startTime: filters.dateRange?.[0],
+      endTime: filters.dateRange?.[1],
+      keyword: searchText.value
     })
+    
     if (response.data) {
       records.value = response.data.records || []
-      totalRecords.value = filteredRecords.value.length
+      recordsList.value = records.value
+      pagination.total = response.data.total || 0
     }
   } catch (error) {
     console.error('加载评分记录失败:', error)
@@ -408,10 +431,20 @@ const loadScoringStats = async () => {
   try {
     const response = await scoringApi.getScoringStatistics()
     if (response.data) {
-      scoringStats.value = response.data
+      const data = response.data
+      scoringStats.value = {
+        pendingCount: data.pendingCount || 0,
+        completedCount: data.completedCount || 0,
+        pendingPercentage: data.pendingPercentage || 0,
+        completedPercentage: data.completedPercentage || 0,
+        averageScore: data.averageScore || 0,
+        dailyScored: data.dailyScored || 0,
+        dailyGrowth: data.dailyGrowth || 0
+      }
     }
   } catch (error) {
     console.error('加载评分统计失败:', error)
+    ElMessage.warning('加载统计数据失败')
   }
 }
 
@@ -467,7 +500,7 @@ const handleRowClick = (row) => {
 
 const handleSearch = () => {
   pagination.current = 1
-  totalRecords.value = filteredRecords.value.length
+  loadRecords()
 }
 
 const resetFilters = () => {
@@ -477,15 +510,18 @@ const resetFilters = () => {
   filters.dateRange = []
   searchText.value = ''
   pagination.current = 1
+  loadRecords()
 }
 
 const handleSizeChange = (size) => {
   pagination.size = size
   pagination.current = 1
+  loadRecords()
 }
 
 const handleCurrentChange = (page) => {
   pagination.current = page
+  loadRecords()
 }
 
 const exportScoring = () => {
@@ -499,15 +535,24 @@ const formatTime = (time) => {
 }
 
 const refreshData = async () => {
-  await Promise.all([
-    loadRecords(),
-    loadScoringStats()
-  ])
+  try {
+    loading.value = true
+    await Promise.all([
+      loadRecords(),
+      loadScoringStats()
+    ])
+    ElMessage.success('数据已刷新')
+  } catch (error) {
+    console.error('刷新数据失败:', error)
+    ElMessage.error('刷新数据失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 // 生命周期
 onMounted(async () => {
-  await Promise.all([loadRecords(), loadScoringStats()])
+  await refreshData()
 })
 </script>
 

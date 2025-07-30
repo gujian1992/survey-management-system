@@ -1,0 +1,116 @@
+/* 全局滚动条样式 */
+:root {
+    --scrollbar-width: 8px;
+    --scrollbar-height: 8px;
+    --scrollbar-track-color: #f7fafc;
+    --scrollbar-thumb-color: #cbd5e0;
+    --scrollbar-thumb-hover-color: #a0aec0;
+    --scrollbar-border-radius: 4px;
+}
+
+/* Firefox滚动条样式 */
+html * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
+}
+
+/* Webkit滚动条样式 */
+html ::-webkit-scrollbar {
+    width: var(--scrollbar-width);
+    height: var(--scrollbar-height);
+}
+
+html ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track-color);
+    border-radius: var(--scrollbar-border-radius);
+}
+
+html ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb-color);
+    border-radius: var(--scrollbar-border-radius);
+    transition: background-color 0.3s ease;
+}
+
+html ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover-color);
+}
+
+/* Element Plus 组件滚动条样式 */
+html .el-table__body-wrapper::-webkit-scrollbar,
+html .el-select-dropdown__wrap::-webkit-scrollbar,
+html .el-drawer__body::-webkit-scrollbar,
+html .el-dialog__body::-webkit-scrollbar,
+html .el-scrollbar__wrap::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+html .el-table__body-wrapper::-webkit-scrollbar-track,
+html .el-select-dropdown__wrap::-webkit-scrollbar-track,
+html .el-drawer__body::-webkit-scrollbar-track,
+html .el-dialog__body::-webkit-scrollbar-track,
+html .el-scrollbar__wrap::-webkit-scrollbar-track {
+    background: #f7fafc;
+    border-radius: 3px;
+}
+
+html .el-table__body-wrapper::-webkit-scrollbar-thumb,
+html .el-select-dropdown__wrap::-webkit-scrollbar-thumb,
+html .el-drawer__body::-webkit-scrollbar-thumb,
+html .el-dialog__body::-webkit-scrollbar-thumb,
+html .el-scrollbar__wrap::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 3px;
+    transition: background-color 0.3s ease;
+}
+
+html .el-table__body-wrapper::-webkit-scrollbar-thumb:hover,
+html .el-select-dropdown__wrap::-webkit-scrollbar-thumb:hover,
+html .el-drawer__body::-webkit-scrollbar-thumb:hover,
+html .el-dialog__body::-webkit-scrollbar-thumb:hover,
+html .el-scrollbar__wrap::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e0;
+}
+
+/* 特殊组件滚动条样式 */
+html .code-editor::-webkit-scrollbar,
+html .markdown-preview::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+html .code-editor::-webkit-scrollbar-track,
+html .markdown-preview::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+html .code-editor::-webkit-scrollbar-thumb,
+html .markdown-preview::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 2px;
+}
+
+html .code-editor::-webkit-scrollbar-thumb:hover,
+html .markdown-preview::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e0;
+}
+
+/* 修复Element Plus的el-scrollbar组件样式 */
+html .el-scrollbar {
+    --el-scrollbar-opacity: 1 !important;
+}
+
+html .el-scrollbar__thumb {
+    background-color: #cbd5e0 !important;
+    transition: background-color 0.3s ease !important;
+}
+
+html .el-scrollbar__thumb:hover {
+    background-color: #a0aec0 !important;
+}
+
+/* 修复Element Plus表格固定列的滚动条问题 */
+html .el-table__fixed-right-patch {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+}

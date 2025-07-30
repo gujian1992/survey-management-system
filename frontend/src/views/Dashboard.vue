@@ -5,7 +5,14 @@
       title="数据概览"
       description="管理后台数据概览与统计分析"
       :icon="DataBoard"
-    />
+    >
+      <template #actions>
+        <el-button size="large" @click="loadData" class="btn-primary">
+          <el-icon><Refresh /></el-icon>
+          刷新数据
+        </el-button>
+      </template>
+    </PageHeader>
 
     <!-- 统计卡片 -->
     <div class="stats-section">
@@ -68,7 +75,7 @@
             <h3>最近问卷创建趋势</h3>
           </div>
           <div class="chart-container">
-            <v-chart class="chart" :option="trendOption" />
+            <v-chart class="chart" :option="trendOption" autoresize />
           </div>
         </div>
         
@@ -77,7 +84,7 @@
             <h3>问卷状态分布</h3>
           </div>
           <div class="chart-container">
-            <v-chart class="chart" :option="statusOption" />
+            <v-chart class="chart" :option="statusOption" autoresize />
           </div>
         </div>
       </div>
@@ -91,29 +98,35 @@
         title="最近创建的问卷"
         :icon="Document"
         :show-pagination="false"
+        class="clean-data-table"
         @row-click="handleRowClick"
       >
-        <el-table-column prop="title" label="问卷标题" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="status" label="状态" width="80">
+        <el-table-column prop="title" label="问卷标题" min-width="450" show-overflow-tooltip>
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
+            <div class="title-cell">
+              <div class="title-text">{{ row.title }}</div>
+              <div class="title-meta">
+                <el-icon><Clock /></el-icon>
+                <span>{{ formatDateTime(row.createTime, 'YYYY-MM-DD HH:mm') }}</span>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.status)" size="small">
               {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="totalCount" label="回复数" width="80">
+        <el-table-column prop="totalCount" label="回复数" width="100" align="center">
           <template #default="{ row }">
-            {{ row.totalCount || 0 }}
+            <div class="count-cell">{{ row.totalCount || 0 }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="浏览量" width="80">
-          <template #default>
-            -
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="150">
+        <el-table-column label="浏览量" width="100" align="center">
           <template #default="{ row }">
-            {{ formatTime(row.createTime) }}
+            <div class="count-cell">{{ row.viewCount || 0 }}</div>
           </template>
         </el-table-column>
       </DataTable>
@@ -121,14 +134,186 @@
   </PageContainer>
 </template>
 
+<style scoped>
+.stats-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+}
+
+.stat-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-normal);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-white);
+}
+
+.stat-icon.total {
+  background: linear-gradient(135deg, #36d1dc, #5b86e5);
+}
+
+.stat-icon.published {
+  background: linear-gradient(135deg, #11998e, #38ef7d);
+}
+
+.stat-icon.responses {
+  background: linear-gradient(135deg, #fc4a1a, #f7b733);
+}
+
+.stat-icon.views {
+  background: linear-gradient(135deg, #8e2de2, #4a00e0);
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-gray-900);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: var(--text-sm);
+  color: var(--color-gray-500);
+  margin-top: var(--spacing-xs);
+}
+
+.charts-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+}
+
+.chart-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.chart-header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.chart-header h3 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-gray-900);
+  margin: 0;
+}
+
+.chart-container {
+  height: 300px;
+  padding: var(--spacing-lg);
+}
+
+.chart {
+  width: 100%;
+  height: 100%;
+}
+
+.recent-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.title-text {
+  font-weight: var(--font-medium);
+  color: var(--color-gray-900);
+}
+
+.title-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--text-sm);
+  color: var(--color-gray-500);
+}
+
+.count-cell {
+  font-family: var(--font-mono);
+  font-weight: var(--font-medium);
+  color: var(--color-gray-700);
+}
+
+:deep(.clean-data-table) {
+  .el-table {
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .el-table th {
+    background: var(--color-gray-50);
+    font-weight: var(--font-semibold);
+  }
+
+  .el-table tr:hover > td {
+    background: var(--color-primary-50);
+  }
+}
+
+.btn-primary {
+  background: var(--gradient-primary);
+  border: none;
+  color: var(--color-white);
+  font-weight: var(--font-medium);
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+}
+</style>
+
 <script setup>
 import { ref, onMounted, onActivated, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { answerSessionAPI, statisticsAPI } from '../api'
 import { ElMessage } from 'element-plus'
-import { formatDateTime } from '@/utils/time'
+import { formatDateTime } from '@/utils/format'
 import { PageContainer, PageHeader, DataTable } from '@/components'
-import { DataBoard, Document, CircleCheck, ChatLineSquare, User } from '@element-plus/icons-vue'
+import { DataBoard, Document, CircleCheck, ChatLineSquare, User, Refresh, Clock } from '@element-plus/icons-vue'
+import 'echarts'
 
 // 组件名称，用于keep-alive
 defineOptions({
@@ -138,11 +323,12 @@ defineOptions({
 const router = useRouter()
 
 const stats = ref({
-  totalQuestionnaires: 0,
-  publishedQuestionnaires: 0,
-  totalResponses: 0,
-  totalViews: 0
+  totalQuestions: 0,
+  enabledQuestions: 0,
+  totalSessions: 0,
+  activeUsers: 0
 })
+
 const recentQuestionnaires = ref([])
 const loading = ref(false)
 const lastLoadTime = ref(0)
@@ -150,38 +336,110 @@ const cacheTimeout = 5 * 60 * 1000 // 5分钟缓存
 
 const trendOption = ref({
   title: {
-    text: '创建趋势'
+    text: '创建趋势',
+    textStyle: {
+      fontSize: 16,
+      fontWeight: 'normal'
+    }
   },
   tooltip: {
-    trigger: 'axis'
+    trigger: 'axis',
+    axisPointer: {
+      type: 'shadow'
+    }
+  },
+  grid: {
+    left: '3%',
+    right: '4%',
+    bottom: '3%',
+    containLabel: true
   },
   xAxis: {
     type: 'category',
-    data: []
+    data: [],
+    axisLine: {
+      lineStyle: {
+        color: '#ddd'
+      }
+    }
   },
   yAxis: {
-    type: 'value'
+    type: 'value',
+    axisLine: {
+      show: false
+    },
+    splitLine: {
+      lineStyle: {
+        color: '#eee'
+      }
+    }
   },
   series: [{
     data: [],
     type: 'line',
-    smooth: true
+    smooth: true,
+    symbolSize: 8,
+    itemStyle: {
+      color: '#409EFF'
+    },
+    areaStyle: {
+      color: {
+        type: 'linear',
+        x: 0,
+        y: 0,
+        x2: 0,
+        y2: 1,
+        colorStops: [{
+          offset: 0,
+          color: 'rgba(64,158,255,0.2)'
+        }, {
+          offset: 1,
+          color: 'rgba(64,158,255,0)'
+        }]
+      }
+    }
   }]
 })
 
 const statusOption = ref({
   title: {
-    text: '状态分布'
+    text: '状态分布',
+    textStyle: {
+      fontSize: 16,
+      fontWeight: 'normal'
+    }
   },
   tooltip: {
-    trigger: 'item'
+    trigger: 'item',
+    formatter: '{b}: {c} ({d}%)'
   },
   legend: {
-    bottom: '0%'
+    bottom: '0%',
+    left: 'center'
   },
   series: [{
     type: 'pie',
-    radius: ['30%', '70%'],
+    radius: ['40%', '70%'],
+    avoidLabelOverlap: false,
+    itemStyle: {
+      borderRadius: 10,
+      borderColor: '#fff',
+      borderWidth: 2
+    },
+    label: {
+      show: false,
+      position: 'center'
+    },
+    emphasis: {
+      label: {
+        show: true,
+        fontSize: 20,
+        fontWeight: 'bold'
+      }
+    },
+    labelLine: {
+      show: false
+    },
     data: []
   }]
 })
@@ -199,58 +457,39 @@ const getStatusText = (status) => {
   const texts = { 
     0: '草稿', 
     1: '已发布', 
-    2: '已结束' 
+    2: '已结束'
   }
   return texts[status] || '未知'
 }
 
-const formatTime = (dateTime) => {
-  return formatDateTime(dateTime, 'short')
+const handleRowClick = (row) => {
+  router.push(`/questionnaire/${row.id}`)
 }
 
-const loadData = async (force = false) => {
-  // 检查缓存
-  if (!force && Date.now() - lastLoadTime.value < cacheTimeout) {
-    return
-  }
-
-  loading.value = true
+const loadData = async () => {
+  if (loading.value) return
+  
   try {
-    // 加载仪表盘统计数据
-    const statsResponse = await statisticsAPI.getDashboardStats()
-    if (statsResponse.data) {
-      stats.value = statsResponse.data
-      
-      // 更新状态分布图表
-      statusOption.value.series[0].data = [
-        { value: statsResponse.data.draftCount || 0, name: '草稿' },
-        { value: statsResponse.data.publishedCount || 0, name: '已发布' },
-        { value: statsResponse.data.endedCount || 0, name: '已结束' }
-      ]
-    }
+    loading.value = true
+    const now = Date.now()
     
-    // 加载趋势数据
-    const trendResponse = await statisticsAPI.getTrend({ days: 7 })
-    if (trendResponse.data) {
-      const { dates, counts } = trendResponse.data
-      trendOption.value.xAxis.data = dates
-      trendOption.value.series[0].data = counts
-    }
-    
-    // 加载最近会话 (可选，失败不影响主要功能)
-    try {
-      const listResponse = await answerSessionAPI.getAllSessions({ current: 1, size: 5 })
-      if (listResponse && listResponse.data && listResponse.data.records) {
-        recentQuestionnaires.value = listResponse.data.records
-      } else {
-        recentQuestionnaires.value = []
-      }
-    } catch (sessionError) {
-      console.warn('加载会话列表失败，但不影响其他数据:', sessionError.message || sessionError)
-      recentQuestionnaires.value = [] // 设置为空数组
+    // 如果距离上次加载时间不到5分钟，直接返回
+    if (now - lastLoadTime.value < cacheTimeout) {
+      return
     }
 
-    lastLoadTime.value = Date.now()
+    // 加载统计数据
+    const statsData = await statisticsAPI.getDashboardStats()
+    stats.value = statsData
+
+    // 加载最近问卷
+    const { records } = await answerSessionAPI.getRecentQuestionnaires()
+    recentQuestionnaires.value = records
+
+    // 更新图表数据
+    updateCharts(statsData)
+    
+    lastLoadTime.value = now
   } catch (error) {
     console.error('加载数据失败:', error)
     ElMessage.error('加载数据失败，请稍后重试')
@@ -259,192 +498,33 @@ const loadData = async (force = false) => {
   }
 }
 
-const handleRowClick = (row) => {
-  router.push('/answer-sessions')
+const updateCharts = (data) => {
+  // 更新趋势图数据
+  if (data.trend) {
+    trendOption.value.xAxis.data = data.trend.map(item => item.date)
+    trendOption.value.series[0].data = data.trend.map(item => item.count)
+  }
+
+  // 更新状态分布图数据
+  if (data.statusDistribution) {
+    statusOption.value.series[0].data = Object.entries(data.statusDistribution).map(([status, count]) => ({
+      name: getStatusText(parseInt(status)),
+      value: count
+    }))
+  }
 }
 
+// 生命周期钩子
 onMounted(() => {
   loadData()
-  // 监听全局数据变化事件
-  window.addEventListener('questionnaireDataChanged', () => {
-    console.log('仪表盘收到数据变化通知，刷新数据')
-    loadData(true) // 强制刷新
-  })
 })
 
-// 组件激活时检查是否需要刷新数据
 onActivated(() => {
   loadData()
 })
 
-// 清理事件监听
+// 清理定时器
 onBeforeUnmount(() => {
-  window.removeEventListener('questionnaireDataChanged', loadData)
+  lastLoadTime.value = 0
 })
-</script>
-
-<style scoped>
-/* Dashboard 特定样式 */
-.stats-section {
-  margin-bottom: var(--spacing-2xl);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--spacing-xl);
-}
-
-.stat-card {
-  background: var(--color-white);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-xl);
-  box-shadow: var(--shadow-card);
-  transition: var(--transition-normal);
-  height: 120px;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  height: 100%;
-}
-
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-white);
-  margin-right: var(--spacing-lg);
-  flex-shrink: 0;
-}
-
-.stat-icon.total {
-  background: var(--gradient-primary);
-}
-
-.stat-icon.published {
-  background: var(--gradient-success);
-}
-
-.stat-icon.responses {
-  background: var(--gradient-info);
-}
-
-.stat-icon.views {
-  background: var(--gradient-warning);
-}
-
-.stat-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.stat-number {
-  font-size: var(--text-3xl);
-  font-weight: var(--font-bold);
-  color: var(--color-gray-800);
-  margin-bottom: var(--spacing-xs);
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: var(--text-sm);
-  color: var(--color-gray-500);
-  font-weight: var(--font-medium);
-}
-
-.charts-section {
-  margin-bottom: var(--spacing-2xl);
-}
-
-.charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: var(--spacing-xl);
-}
-
-.chart-card {
-  background: var(--color-white);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
-  transition: var(--transition-normal);
-}
-
-.chart-card:hover {
-  box-shadow: var(--shadow-lg);
-}
-
-.chart-header {
-  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
-  border-bottom: 1px solid var(--color-gray-100);
-}
-
-.chart-header h3 {
-  margin: 0;
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--color-gray-800);
-}
-
-.chart-container {
-  height: 300px;
-  padding: var(--spacing-lg);
-}
-
-.chart {
-  height: 100%;
-  width: 100%;
-}
-
-.recent-section {
-  margin-bottom: var(--spacing-2xl);
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
-  }
-  
-  .charts-grid {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
-  }
-  
-  .stat-card {
-    height: auto;
-    padding: var(--spacing-lg);
-  }
-  
-  .stat-item {
-    flex-direction: column;
-    text-align: center;
-    gap: var(--spacing-md);
-  }
-  
-  .stat-icon {
-    margin-right: 0;
-  }
-  
-  .chart-container {
-    height: 250px;
-  }
-}
-
-@media (max-width: 1200px) {
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style> 
+</script> 

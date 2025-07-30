@@ -76,4 +76,9 @@ public interface QuestionBankService extends IService<QuestionBank> {
      * 根据ID获取题目详情（包含扩展信息）
      */
     QuestionBank getQuestionDetail(Long id);
+    
+    /**
+     * 获取题目列表（无分页）
+     */
+    List<QuestionBank> getQuestionList(Integer type, Integer status, String difficulty, String keyword);
 } 

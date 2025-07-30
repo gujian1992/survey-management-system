@@ -111,10 +111,11 @@ CREATE TABLE IF NOT EXISTS scoring_record (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '评分记录ID',
     answer_record_id BIGINT NOT NULL COMMENT '答题记录ID',
     session_id BIGINT NOT NULL COMMENT '会话ID',
+    question_id BIGINT NOT NULL COMMENT '题目ID',
     scorer_id BIGINT NOT NULL COMMENT '评分者ID',
     score INT NOT NULL COMMENT '评分',
     max_score INT NOT NULL COMMENT '满分',
-    feedback TEXT COMMENT '评分反馈',
+    comment TEXT COMMENT '评分反馈',
     scoring_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '评分时间',
     
     INDEX idx_answer_record (answer_record_id),

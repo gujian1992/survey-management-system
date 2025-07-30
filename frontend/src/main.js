@@ -5,11 +5,26 @@ import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
 // 🌏 Element Plus 中文国际化
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
-// 先引入 Element Plus 的基础样式
+
+// 样式导入顺序很重要
+// 1. 基础变量和重置样式
+import './styles/base/variables.css'
+import './styles/base/reset.css'
+
+// 2. Element Plus 基础样式
 import 'element-plus/dist/index.css'
-// 再引入主题覆盖样式
+
+// 3. 自定义组件样式
+import './styles/components/form.css'
+import './styles/components/button.css'
+import './styles/components/card.css'
+
+// 4. Element Plus 主题覆盖和增强
 import './styles/themes/element-plus-override.css'
-// 最后引入全局样式系统
+import './styles/themes/scrollbar.css'
+
+// 5. 全局工具类和通用样式
+import './styles/base/utilities.css'
 import './styles/index.css'
 
 // 导入 Element Plus 图标
@@ -26,17 +41,13 @@ import {
   GridComponent
 } from 'echarts/components'
 
-// 🚀 导入高级按钮增强插件系统 - 安全模式
-import { AdvancedButtonEnhancerPlugin, PRESET_THEMES, ThemeConfig, ENHANCEMENT_STRATEGIES } from '@/plugins/AdvancedButtonEnhancer.js'
+// 暂时注释掉可能有问题的高级插件
+// import { AdvancedButtonEnhancerPlugin, PRESET_THEMES, ThemeConfig, ENHANCEMENT_STRATEGIES } from '@/plugins/AdvancedButtonEnhancer.js'
+// import { installTechAlert } from '@/utils/techAlert.js'
+// import { installModernDialog } from '@/utils/modernDialog.js'
+// import { installPremiumDialog } from '@/utils/premiumDialog.js'
 
-// 🎨 导入科技感提示系统
-import { installTechAlert } from '@/utils/techAlert.js'
-
-// 🎨 导入现代化弹出框系统
-import { installModernDialog } from '@/utils/modernDialog.js'
-
-// 🚀 导入企业级弹出框系统
-import { installPremiumDialog } from '@/utils/premiumDialog.js'
+import { useUserStore } from './store/user'
 
 use([
   CanvasRenderer,
@@ -64,74 +75,41 @@ app.use(ElementPlus, {
 app.use(pinia)
 app.use(router)
 
-// 🎨 注册高级按钮增强插件 - 安全模式
-app.use(AdvancedButtonEnhancerPlugin, {
-  strategy: ENHANCEMENT_STRATEGIES.HYBRID,
-  enableAnimation: true,
-  debugMode: import.meta.env.MODE === 'development',
-  performanceMode: false,
-  safeMode: true // 强制启用安全模式
-})
+// 暂时注释掉高级插件的注册
+// app.use(AdvancedButtonEnhancerPlugin, {
+//   strategy: ENHANCEMENT_STRATEGIES.HYBRID,
+//   enableAnimation: true,
+//   debugMode: import.meta.env.MODE === 'development',
+//   performanceMode: false,
+//   safeMode: true
+// })
 
-// 🎯 简化的主题注册（只注册基础主题）
-const enhancer = app.config.globalProperties.$advancedButtonEnhancer
+// installTechAlert(app)
+// installModernDialog(app)
+// installPremiumDialog(app)
 
-if (enhancer) {
-  // 注册简化的企业级主题
-  enhancer.registerTheme(new ThemeConfig('primary', {
-    default: {
-      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-      border: 'none',
-      borderRadius: '12px',
-      color: 'white',
-      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-      transform: 'translateY(0)',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-    },
-    hover: {
-      background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
-      transform: 'translateY(-2px)',
-      boxShadow: '0 6px 20px rgba(59, 130, 246, 0.4)'
-    },
-    active: {
-      transform: 'translateY(-1px)',
-      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.5)'
-    },
-    strategy: ENHANCEMENT_STRATEGIES.HYBRID
-  }))
+console.log('Vue应用开始初始化...')
 
-  enhancer.registerTheme(new ThemeConfig('secondary', {
-    default: {
-      background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
-      border: 'none',
-      borderRadius: '12px',
-      color: 'white',
-      boxShadow: '0 4px 12px rgba(107, 114, 128, 0.3)',
-      transform: 'translateY(0)',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-    },
-    hover: {
-      background: 'linear-gradient(135deg, #4b5563 0%, #374151 100%)',
-      transform: 'translateY(-2px)',
-      boxShadow: '0 6px 20px rgba(107, 114, 128, 0.4)'
-    },
-    active: {
-      transform: 'translateY(-1px)',
-      boxShadow: '0 4px 12px rgba(107, 114, 128, 0.5)'
-    },
-    strategy: ENHANCEMENT_STRATEGIES.HYBRID
-  }))
+// 初始化应用
+async function initApp() {
+  try {
+    console.log('开始初始化用户状态...')
+    // 初始化用户状态
+    const userStore = useUserStore(pinia)
+    if (userStore.initUserState) {
+      await userStore.initUserState()
+      console.log('用户状态初始化完成')
+    }
 
-  console.log('[Main] 高级按钮增强系统初始化完成（安全模式）')
+    // 挂载应用
+    console.log('挂载Vue应用...')
+    app.mount('#app')
+    console.log('Vue应用启动成功!')
+  } catch (error) {
+    console.error('应用初始化失败:', error)
+    // 即使初始化失败也要挂载应用，只是没有用户状态
+    app.mount('#app')
+  }
 }
 
-// 🎨 安装科技感提示系统
-installTechAlert(app)
-
-// 🎨 安装现代化弹出框系统
-installModernDialog(app)
-
-// 🚀 安装企业级弹出框系统
-installPremiumDialog(app)
-
-app.mount('#app') 
+initApp() 

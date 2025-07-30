@@ -4,93 +4,97 @@
 
 /**
  * 格式化日期时间
- * @param {string|Date} dateTime 日期时间
- * @param {string} format 格式类型：'datetime', 'date', 'time'
+ * @param {string|number|Date} date 要格式化的日期
+ * @param {string} [format='YYYY-MM-DD HH:mm:ss'] 格式化模式
+ * @returns {string} 格式化后的日期字符串
+ */
+export const formatDate = (date, format = 'YYYY-MM-DD HH:mm:ss') => {
+  if (!date) return '-'
+
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return '-'
+
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  const seconds = String(d.getSeconds()).padStart(2, '0')
+
+  return format
+    .replace('YYYY', year)
+    .replace('MM', month)
+    .replace('DD', day)
+    .replace('HH', hours)
+    .replace('mm', minutes)
+    .replace('ss', seconds)
+}
+
+/**
+ * 格式化时长（秒转换为可读时间）
+ * @param {number} seconds 秒数
  * @returns {string} 格式化后的时间字符串
  */
-export const formatDateTime = (dateTime, format = 'datetime') => {
-  if (!dateTime) return ''
-  
-  try {
-    const date = new Date(dateTime)
-    
-    if (isNaN(date.getTime())) {
-      return dateTime
-    }
-    
-    const options = {
-      datetime: {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      },
-      date: {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      },
-      time: {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      },
-      short: {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      }
-    }
-    
-    return date.toLocaleString('zh-CN', options[format] || options.datetime)
-  } catch (error) {
-    console.error('时间格式化失败:', error)
-    return dateTime
-  }
+export const formatDuration = (seconds) => {
+  if (!seconds || seconds < 0) return '0秒'
+
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const remainingSeconds = seconds % 60
+
+  const parts = []
+  if (hours > 0) parts.push(`${hours}小时`)
+  if (minutes > 0) parts.push(`${minutes}分钟`)
+  if (remainingSeconds > 0 || parts.length === 0) parts.push(`${remainingSeconds}秒`)
+
+  return parts.join('')
+}
+
+/**
+ * 计算两个日期之间的时间差（秒）
+ * @param {string|number|Date} startDate 开始时间
+ * @param {string|number|Date} endDate 结束时间
+ * @returns {number} 时间差（秒）
+ */
+export const calculateTimeDiff = (startDate, endDate) => {
+  if (!startDate || !endDate) return 0
+
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0
+
+  return Math.floor((end - start) / 1000)
 }
 
 /**
  * 获取相对时间描述
- * @param {string|Date} dateTime 日期时间
+ * @param {string|number|Date} date 日期
  * @returns {string} 相对时间描述
  */
-export const getRelativeTime = (dateTime) => {
-  if (!dateTime) return ''
-  
-  try {
-    const date = new Date(dateTime)
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    
-    const minute = 60 * 1000
-    const hour = 60 * minute
-    const day = 24 * hour
-    const week = 7 * day
-    const month = 30 * day
-    const year = 365 * day
-    
-    if (diff < minute) {
-      return '刚刚'
-    } else if (diff < hour) {
-      return `${Math.floor(diff / minute)}分钟前`
-    } else if (diff < day) {
-      return `${Math.floor(diff / hour)}小时前`
-    } else if (diff < week) {
-      return `${Math.floor(diff / day)}天前`
-    } else if (diff < month) {
-      return `${Math.floor(diff / week)}周前`
-    } else if (diff < year) {
-      return `${Math.floor(diff / month)}个月前`
-    } else {
-      return `${Math.floor(diff / year)}年前`
-    }
-  } catch (error) {
-    console.error('相对时间计算失败:', error)
-    return formatDateTime(dateTime, 'short')
+export const getRelativeTime = (date) => {
+  if (!date) return '-'
+
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return '-'
+
+  const now = new Date()
+  const diff = now - d
+  const seconds = Math.floor(diff / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+
+  if (days > 30) {
+    return formatDate(date, 'YYYY-MM-DD')
+  } else if (days > 0) {
+    return `${days}天前`
+  } else if (hours > 0) {
+    return `${hours}小时前`
+  } else if (minutes > 0) {
+    return `${minutes}分钟前`
+  } else {
+    return seconds <= 0 ? '刚刚' : `${seconds}秒前`
   }
 }
 
@@ -104,7 +108,7 @@ export const getQuestionnaireTimeStatus = (questionnaire) => {
   const startTime = questionnaire.startTime ? new Date(questionnaire.startTime) : null
   const endTime = questionnaire.endTime ? new Date(questionnaire.endTime) : null
   const publishTime = questionnaire.publishTime ? new Date(questionnaire.publishTime) : null
-  
+
   const status = {
     canFill: false,
     timeStatus: 'unknown',
@@ -112,39 +116,39 @@ export const getQuestionnaireTimeStatus = (questionnaire) => {
     isExpired: false,
     isNotStarted: false
   }
-  
+
   // 如果问卷未发布
   if (questionnaire.status !== 1) {
     status.timeStatus = 'not-published'
     status.timeMessage = '问卷未发布'
     return status
   }
-  
+
   // 如果有开始时间且还未开始
   if (startTime && now < startTime) {
     status.timeStatus = 'not-started'
-    status.timeMessage = `问卷将于 ${formatDateTime(startTime)} 开始`
+    status.timeMessage = `问卷将于 ${formatDate(startTime)} 开始`
     status.isNotStarted = true
     return status
   }
-  
+
   // 如果有结束时间且已过期
   if (endTime && now > endTime) {
     status.timeStatus = 'expired'
-    status.timeMessage = `问卷已于 ${formatDateTime(endTime)} 结束`
+    status.timeMessage = `问卷已于 ${formatDate(endTime)} 结束`
     status.isExpired = true
     return status
   }
-  
+
   // 可以填写
   status.canFill = true
   status.timeStatus = 'active'
-  
+
   if (endTime) {
     const timeLeft = endTime.getTime() - now.getTime()
     const daysLeft = Math.floor(timeLeft / (24 * 60 * 60 * 1000))
     const hoursLeft = Math.floor((timeLeft % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000))
-    
+
     if (daysLeft > 0) {
       status.timeMessage = `距离结束还有 ${daysLeft} 天`
     } else if (hoursLeft > 0) {
@@ -155,7 +159,7 @@ export const getQuestionnaireTimeStatus = (questionnaire) => {
   } else {
     status.timeMessage = '长期有效'
   }
-  
+
   return status
 }
 
@@ -170,21 +174,21 @@ export const validateTimeRange = (startTime, endTime) => {
     valid: true,
     message: ''
   }
-  
+
   if (!startTime && !endTime) {
     return result
   }
-  
+
   if (startTime && endTime) {
     const start = new Date(startTime)
     const end = new Date(endTime)
-    
+
     if (start >= end) {
       result.valid = false
       result.message = '开始时间必须早于结束时间'
       return result
     }
-    
+
     const now = new Date()
     if (end <= now) {
       result.valid = false
@@ -192,7 +196,7 @@ export const validateTimeRange = (startTime, endTime) => {
       return result
     }
   }
-  
+
   return result
 }
 
@@ -206,16 +210,13 @@ export const getTimeRangeDescription = (startTime, endTime) => {
   if (!startTime && !endTime) {
     return '长期有效'
   }
-  
+
   if (startTime && !endTime) {
-    return `${formatDateTime(startTime)} 开始，长期有效`
+    return `${formatDate(startTime)} 开始，长期有效`
   }
-  
-  if (!startTime && endTime) {
-    return `截止到 ${formatDateTime(endTime)}`
-  }
-  
-  return `${formatDateTime(startTime)} 至 ${formatDateTime(endTime)}`
+
+
+  return `${formatDate(startTime)} 至 ${formatDate(endTime)}`
 }
 
 /**
@@ -230,6 +231,6 @@ export const getTimeStatusTagType = (timeStatus) => {
     'expired': 'danger',
     'not-published': 'info'
   }
-  
+
   return typeMap[timeStatus] || 'info'
 } 

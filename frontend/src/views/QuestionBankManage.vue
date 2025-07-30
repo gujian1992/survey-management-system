@@ -639,7 +639,7 @@ import {
   QUESTION_TYPE_COLORS,
   PRIORITY_NAMES
 } from '../constants/questionTypes'
-import { formatDateTime } from '@/utils/time'
+import { formatDateTime } from '@/utils/format'
 import { PageContainer, PageHeader, SearchPanel, DataTable } from '@/components'
 import ActionButtons from '@/components/base/ActionButtons.vue'
 import { 

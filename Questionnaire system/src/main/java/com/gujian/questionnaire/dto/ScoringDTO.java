@@ -24,6 +24,12 @@ public class ScoringDTO {
     @Min(value = 0, message = "评分不能小于0")
     private Integer score;
     
+    @Schema(description = "满分", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "满分不能为空")
+    @Min(value = 0, message = "满分不能小于0")
+    @Max(value = 100, message = "满分不能超过100")
+    private Integer maxScore;
+    
     @Schema(description = "评分反馈")
     private String comment;
 } 

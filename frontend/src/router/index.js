@@ -2,10 +2,13 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { measureRouteChange } from '@/utils/performance'
 import { beforePageLeave, afterPageEnter } from '@/utils/cacheManager'
+import { ElMessageBox } from 'element-plus'
 
 // 懒加载组件
 const Dashboard = () => import('../views/Dashboard.vue')
 const Login = () => import('../views/Login.vue')
+const MyAnswerRecords = () => import('../views/MyAnswerRecords.vue')
+const AnswerRecordDetail = () => import('../views/AnswerRecordDetail.vue')
 
 // 新系统页面 - 管理员
 const QuestionBankManage = () => import('../views/QuestionBankManage.vue')
@@ -25,92 +28,96 @@ const StartAnswer = () => {
   })
 }
 const AnswerQuestion = () => import('../views/AnswerQuestion.vue')
-const MyAnswerRecords = () => import('../views/MyAnswerRecords.vue')
 const SystemUpgrade = () => import('../views/SystemUpgrade.vue')
 const TableDebug = () => import('../views/TableDebug.vue')
+const TestConsole = () => import('../views/TestConsole.vue')
 
 const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: Login,
+    component: () => import('@/views/Login.vue'),
     meta: { hideLayout: true }
   },
   {
     path: '/',
-    name: 'Home',
-    redirect: '/dashboard' // 默认重定向，会在路由守卫中根据角色调整
+    redirect: '/start-answer'
   },
-  // 管理员路由 - 新系统
+  {
+    path: '/start-answer',
+    name: 'StartAnswer',
+    component: () => import('@/views/StartAnswer.vue')
+  },
+  {
+    path: '/answer-session/:sessionCode',
+    name: 'AnswerQuestion',
+    component: () => import('@/views/AnswerQuestion.vue'),
+    props: true
+  },
+
+  {
+    path: '/answer-records',
+    redirect: '/my-answer-records'
+  },
+  {
+    path: '/my-answer-records',
+    name: 'MyAnswerRecords',
+    component: () => import('@/views/MyAnswerRecords.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/answer-records/:sessionCode',
+    name: 'AnswerRecordDetail',
+    component: AnswerRecordDetail,
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/answer-session-manage',
+    name: 'AnswerSessionManage',
+    component: () => import('@/views/AnswerSessionManage.vue')
+  },
+  {
+    path: '/scoring-manage',
+    name: 'ScoringManage',
+    component: () => import('@/views/ScoringManage.vue')
+  },
   {
     path: '/dashboard',
     name: 'Dashboard',
-    component: Dashboard,
+    component: () => import('@/views/Dashboard.vue'),
     meta: { requiresAuth: true, role: 'ADMIN', keepAlive: true }
   },
   {
     path: '/question-bank',
     name: 'QuestionBankManage',
-    component: QuestionBankManage,
-    meta: { requiresAuth: true, role: 'ADMIN', keepAlive: true }
-  },
-  {
-    path: '/answer-sessions',
-    name: 'AnswerSessionManage',
-    component: AnswerSessionManage,
-    meta: { requiresAuth: true, role: 'ADMIN', keepAlive: true }
-  },
-  {
-    path: '/scoring',
-    name: 'ScoringManage',
-    component: ScoringManage,
+    component: () => import('@/views/QuestionBankManage.vue'),
     meta: { requiresAuth: true, role: 'ADMIN', keepAlive: true }
   },
   {
     path: '/statistics',
     name: 'Statistics',
-    component: Statistics,
+    component: () => import('@/views/Statistics.vue'),
     meta: { requiresAuth: true, role: 'ADMIN', keepAlive: true }
   },
-  
-  // 用户路由 - 新系统
-  {
-    path: '/start-answer',
-    name: 'StartAnswer',
-    component: StartAnswer,
-    meta: { requiresAuth: true, role: 'USER', keepAlive: true }
-  },
-  {
-    path: '/answer-session/:sessionCode',
-    name: 'AnswerQuestion',
-    component: AnswerQuestion,
-    meta: { requiresAuth: true, role: 'USER' }
-  },
-  {
-    path: '/my-records',
-    name: 'MyRecords',
-    component: MyAnswerRecords,
-    meta: { requiresAuth: true, role: 'USER', keepAlive: true }
-  },
-
-  
-  // 系统升级页面
   {
     path: '/system-upgrade',
     name: 'SystemUpgrade',
-    component: SystemUpgrade,
+    component: () => import('@/views/SystemUpgrade.vue'),
     meta: { requiresAuth: true }
   },
-  
-  // 调试页面
   {
     path: '/table-debug',
     name: 'TableDebug',
-    component: TableDebug,
+    component: () => import('@/views/TableDebug.vue'),
     meta: { requiresAuth: true }
   },
-  
-  // 旧系统路由重定向
+  {
+    path: '/test-console',
+    name: 'TestConsole',
+    component: () => import('@/views/TestConsole.vue'),
+    meta: { requiresAuth: true, role: 'ADMIN' }
+  },
   {
     path: '/questionnaire',
     redirect: '/system-upgrade'
@@ -136,15 +143,9 @@ const routes = [
     redirect: '/system-upgrade'
   },
   {
-    path: '/my-responses',
-    redirect: '/system-upgrade'
-  },
-  {
     path: '/questionnaire/fill/:id',
     redirect: '/system-upgrade'
   },
-
-
 ]
 
 const router = createRouter({
@@ -156,14 +157,9 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   // 开始监控路由切换时间
   const measureEnd = measureRouteChange(from.path, to.path)
-  
+
   const userStore = useUserStore()
-  
-  // 使用智能缓存管理器处理页面切换
-  if (from.name) {
-    beforePageLeave(from, to)
-  }
-  
+
   // 如果是登录页面，直接通过
   if (to.path === '/login') {
     // 如果已登录且有用户信息，重定向到首页
@@ -174,7 +170,7 @@ router.beforeEach(async (to, from, next) => {
     next()
     return
   }
-  
+
   // 初始化用户状态（仅在有token且没有用户信息时）
   if (userStore.token && !userStore.userInfo) {
     try {
@@ -187,19 +183,19 @@ router.beforeEach(async (to, from, next) => {
       return
     }
   }
-  
+
   // 处理根路径重定向
   if (to.path === '/') {
     next(userStore.isAdmin ? '/dashboard' : '/start-answer')
     return
   }
-  
+
   // 检查是否需要登录
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
     next('/login')
     return
   }
-  
+
   // 检查角色权限
   if (to.meta.role && userStore.role !== to.meta.role) {
     // 如果是管理员访问用户页面，重定向到管理员首页
@@ -211,15 +207,12 @@ router.beforeEach(async (to, from, next) => {
     }
     return
   }
-  
+
   next()
 })
 
 // 路由切换完成后的监控
 router.afterEach((to, from) => {
-  // 使用智能缓存管理器处理页面进入
-  afterPageEnter(to, from)
-  
   console.log(`路由切换完成: ${from?.path || '无'} -> ${to.path}`)
 })
 

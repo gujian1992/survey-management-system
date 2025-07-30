@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        input {
+            padding: 5px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>答题记录详情页面 API 测试</h1>
+        
+        <div class="test-section">
+            <h3>1. 测试会话详情API</h3>
+            <input type="text" id="sessionCode1" placeholder="输入会话编码" value="TEST_SESSION_001">
+            <button onclick="testSessionDetail()">测试获取会话详情</button>
+            <div id="sessionDetailResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 测试答题记录API</h3>
+            <input type="text" id="sessionCode2" placeholder="输入会话编码" value="TEST_SESSION_001">
+            <button onclick="testAnswerDetails()">测试获取答题记录</button>
+            <div id="answerDetailsResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 测试统计信息API</h3>
+            <input type="text" id="sessionId" placeholder="输入会话ID" value="1">
+            <button onclick="testStatistics()">测试获取统计信息</button>
+            <div id="statisticsResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 测试完整流程</h3>
+            <input type="text" id="sessionCodeFull" placeholder="输入会话编码" value="TEST_SESSION_001">
+            <button onclick="testFullFlow()">测试完整流程</button>
+            <div id="fullFlowResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. 直接测试详情页面</h3>
+            <input type="text" id="sessionCodePage" placeholder="输入会话编码" value="TEST_SESSION_001">
+            <button onclick="openDetailPage()">打开详情页面</button>
+            <p style="margin-top: 10px; color: #666; font-size: 14px;">
+                这将在新窗口中打开详情页面，请查看浏览器控制台的日志信息
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+
+        async function makeRequest(url, options = {}) {
+            try {
+                // 从localStorage获取token
+                const token = localStorage.getItem('token');
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token && { 'Authorization': `Bearer ${token}` }),
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                const data = await response.json();
+                return {
+                    success: response.ok,
+                    status: response.status,
+                    data: data
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        async function testSessionDetail() {
+            const sessionCode = document.getElementById('sessionCode1').value;
+            const resultDiv = document.getElementById('sessionDetailResult');
+            
+            resultDiv.textContent = '正在测试...';
+            resultDiv.className = 'result';
+            
+            const result = await makeRequest(`${API_BASE}/answer-session/${sessionCode}/status`);
+            
+            if (result.success) {
+                resultDiv.textContent = `成功！\n${JSON.stringify(result.data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } else {
+                resultDiv.textContent = `失败！\n状态码: ${result.status}\n错误: ${result.error || JSON.stringify(result.data, null, 2)}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testAnswerDetails() {
+            const sessionCode = document.getElementById('sessionCode2').value;
+            const resultDiv = document.getElementById('answerDetailsResult');
+            
+            resultDiv.textContent = '正在测试...';
+            resultDiv.className = 'result';
+            
+            const result = await makeRequest(`${API_BASE}/answer-session/${sessionCode}/answers`);
+            
+            if (result.success) {
+                resultDiv.textContent = `成功！\n${JSON.stringify(result.data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } else {
+                resultDiv.textContent = `失败！\n状态码: ${result.status}\n错误: ${result.error || JSON.stringify(result.data, null, 2)}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testStatistics() {
+            const sessionId = document.getElementById('sessionId').value;
+            const resultDiv = document.getElementById('statisticsResult');
+            
+            resultDiv.textContent = '正在测试...';
+            resultDiv.className = 'result';
+            
+            const result = await makeRequest(`${API_BASE}/answer-session/${sessionId}/stats`);
+            
+            if (result.success) {
+                resultDiv.textContent = `成功！\n${JSON.stringify(result.data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } else {
+                resultDiv.textContent = `失败！\n状态码: ${result.status}\n错误: ${result.error || JSON.stringify(result.data, null, 2)}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testFullFlow() {
+            const sessionCode = document.getElementById('sessionCodeFull').value;
+            const resultDiv = document.getElementById('fullFlowResult');
+            
+            resultDiv.textContent = '正在测试完整流程...\n';
+            resultDiv.className = 'result';
+            
+            let log = '';
+            
+            // 1. 测试会话详情
+            log += '1. 测试会话详情...\n';
+            const sessionResult = await makeRequest(`${API_BASE}/answer-session/${sessionCode}/status`);
+            if (sessionResult.success) {
+                log += '   ✓ 会话详情获取成功\n';
+                const sessionData = sessionResult.data;
+                
+                // 2. 测试答题记录
+                log += '2. 测试答题记录...\n';
+                const answersResult = await makeRequest(`${API_BASE}/answer-session/${sessionCode}/answers`);
+                if (answersResult.success) {
+                    log += '   ✓ 答题记录获取成功\n';
+                } else {
+                    log += `   ✗ 答题记录获取失败: ${answersResult.error || JSON.stringify(answersResult.data)}\n`;
+                }
+                
+                // 3. 测试统计信息（如果有会话ID）
+                if (sessionData && sessionData.id) {
+                    log += '3. 测试统计信息...\n';
+                    const statsResult = await makeRequest(`${API_BASE}/answer-session/${sessionData.id}/stats`);
+                    if (statsResult.success) {
+                        log += '   ✓ 统计信息获取成功\n';
+                    } else {
+                        log += `   ✗ 统计信息获取失败: ${statsResult.error || JSON.stringify(statsResult.data)}\n`;
+                    }
+                } else {
+                    log += '3. 跳过统计信息测试（无会话ID）\n';
+                }
+                
+                log += '\n完整流程测试完成！';
+                resultDiv.className = 'result success';
+            } else {
+                log += `   ✗ 会话详情获取失败: ${sessionResult.error || JSON.stringify(sessionResult.data)}\n`;
+                log += '\n流程中断！';
+                resultDiv.className = 'result error';
+            }
+            
+            resultDiv.textContent = log;
+        }
+
+        function openDetailPage() {
+            const sessionCode = document.getElementById('sessionCodePage').value;
+            const url = `http://localhost:3000/answer-records/${sessionCode}`;
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>

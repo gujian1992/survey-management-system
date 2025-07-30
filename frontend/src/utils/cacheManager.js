@@ -18,7 +18,7 @@ class CacheManager {
       'QuestionnaireList',
       'Statistics'
     ])
-    
+
     this.initEventListeners()
   }
 
@@ -77,7 +77,7 @@ class CacheManager {
    */
   getCachedComponents(userRole) {
     const cached = []
-    
+
     if (userRole === 'ADMIN') {
       // 管理员：缓存核心管理页面
       this.performanceRoutes.forEach(route => {
@@ -89,7 +89,7 @@ class CacheManager {
       // 普通用户：暂时不缓存，确保数据一致性
       // 可以根据稳定性情况后续添加 MyResponses 等页面
     }
-    
+
     return cached
   }
 
@@ -101,7 +101,7 @@ class CacheManager {
     window.dispatchEvent(new CustomEvent('forceClearCache', {
       detail: { componentName }
     }))
-    
+
     this.cacheStatus.delete(componentName)
   }
 
@@ -145,10 +145,15 @@ class CacheManager {
    * 处理页面切换前的清理
    */
   beforePageLeave(from, to) {
+    // 跳过答题页面的处理
+    if (from && from.name === 'AnswerQuestion') {
+      return
+    }
+
     if (from && this.conflictRoutes.has(from.name)) {
       console.log(`清理冲突路由缓存: ${from.name}`)
       this.forceClearCache(from.name)
-      
+
       // 延迟清理，确保动画完成
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('pageTransition', {
@@ -162,8 +167,13 @@ class CacheManager {
    * 处理页面进入后的初始化
    */
   afterPageEnter(to, from) {
+    // 跳过答题页面的处理
+    if (to.name === 'AnswerQuestion') {
+      return
+    }
+
     this.recordCacheStatus(to.name, 'active')
-    
+
     // 对于冲突路由，确保状态完全清理
     if (this.conflictRoutes.has(to.name)) {
       setTimeout(() => {
@@ -179,7 +189,7 @@ class CacheManager {
    */
   cleanup() {
     this.cacheStatus.clear()
-    
+
     // 清理可能残留的状态
     this.conflictRoutes.forEach(componentName => {
       this.forceClearCache(componentName)

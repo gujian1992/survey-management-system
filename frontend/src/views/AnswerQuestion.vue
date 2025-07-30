@@ -6,178 +6,136 @@
 - 减少了90%的状态同步操作，提升性能
 -->
 <template>
-  <div class="exam-page">
-    <!-- 顶部信息栏 -->
-    <header class="exam-header">
-      <div class="exam-info">
-        <h1 class="exam-title">答题系统</h1>
-        <div class="exam-meta">
-          <span>考试编号：{{ sessionCode }}</span>
-          <span>第 {{ currentIndex + 1 }} 题 / 共 {{ totalQuestions }} 题</span>
-        </div>
+  <div class="answer-question-container">
+    <!-- 顶部工具栏 -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <span class="exam-title">{{ examTitle }}</span>
       </div>
-      <div class="exam-status">
-        <div :class="['timer', timeRemaining < 300 ? 'warning' : '']">
+      <div class="toolbar-right">
+        <div class="function-button" @click="togglePause" :title="isPaused ? '继续答题' : '暂停答题'">
           <el-icon><Timer /></el-icon>
-          <span>{{ formatTime(timeRemaining) }}</span>
         </div>
-        <div class="score-info" v-if="currentScore > 0">
-          当前得分：{{ currentScore }}
-        </div>
+        <span class="remaining-time">剩余时间：{{ formatTime(remainingTime) }}</span>
       </div>
-    </header>
+    </div>
 
-    <!-- 主要内容区 -->
-    <main class="exam-main">
-      <!-- 题目区域 -->
-      <section class="question-section" v-if="currentQuestion">
+    <!-- 主要内容区域 -->
+    <div class="main-content">
+      <div class="question-card" v-if="currentQuestion">
+        <!-- 题目信息头部 -->
         <div class="question-header">
-          <div class="question-type">
-            <span class="type-name">{{ getQuestionTypeName(currentQuestion.type) }}</span>
-            <span class="score">{{ currentQuestion.score }}分</span>
+          <div class="question-info">
+            <span class="score-tag">{{ currentQuestion.score }}分</span>
+            <span class="question-type">{{ getQuestionTypeName(currentQuestion.type) }}</span>
           </div>
-        </div>
-
-        <div class="question-content">
-          <h2 class="title">{{ currentQuestion.title || currentQuestion.content }}</h2>
-          <p class="description" v-if="currentQuestion.description && currentQuestion.description !== currentQuestion.title">
-            {{ currentQuestion.description }}
-          </p>
-        </div>
-
-        <!-- 答题区域 -->
-        <div class="answer-area">
-          <!-- 单选题 -->
-          <div v-if="Number(currentQuestion.type) === 1" class="choice-options">
-            <el-radio-group v-model="userAnswer">
-              <el-radio 
-                v-for="(option, index) in currentQuestion.options" 
-                :key="index"
-                :value="option"
-                class="option-item"
-              >
-                {{ String.fromCharCode(65 + index) }}. {{ option }}
-              </el-radio>
-            </el-radio-group>
-          </div>
-
-          <!-- 多选题 -->
-          <div v-else-if="Number(currentQuestion.type) === 2" class="choice-options">
-            <el-checkbox-group v-model="userAnswer">
-              <el-checkbox 
-                v-for="(option, index) in currentQuestion.options" 
-                :key="index"
-                :value="option"
-                class="option-item"
-              >
-                {{ String.fromCharCode(65 + index) }}. {{ option }}
-              </el-checkbox>
-            </el-checkbox-group>
-          </div>
-
-          <!-- 填空题 -->
-          <div v-else-if="Number(currentQuestion.type) === 3">
-            <el-input
-              v-model="userAnswer"
-              type="text"
-              placeholder="请输入答案"
-            />
-          </div>
-
-          <!-- 简答题 -->
-          <div v-else-if="Number(currentQuestion.type) === 4">
-            <el-input
-              v-model="userAnswer"
-              type="textarea"
-              :rows="6"
-              placeholder="请输入答案"
-            />
-          </div>
-
-          <!-- 评分题 -->
-          <div v-else-if="Number(currentQuestion.type) === 5" class="rating-section">
-            <div class="rating-container">
-              <el-rate
-                v-model="userAnswer"
-                :max="10"
-                show-score
-                show-text
-                :texts="['极差', '很差', '较差', '一般', '较好', '好', '很好', '优秀', '非常优秀', '完美']"
-                class="rating-input"
-              />
-              <p class="rating-hint">请根据题目要求进行评分（1-10分）</p>
+          <div class="progress-info">
+            <div class="progress-bar">
+              <div class="progress-inner" :style="{ width: `${(currentIndex + 1) / totalQuestions * 100}%` }"></div>
             </div>
+            <span class="progress-text">{{ currentIndex + 1 }} / {{ totalQuestions }}</span>
           </div>
         </div>
 
-        <!-- 操作按钮 -->
-        <div class="question-actions">
+        <!-- 题目内容区域 -->
+        <div class="question-content">
+          <div class="question-title">
+            <span class="question-number">{{ currentIndex + 1 }}. </span>
+            {{ currentQuestion.title }}
+          </div>
+          <div class="answer-area">
+            <!-- 单选题 -->
+            <template v-if="currentQuestion.type === 1">
+              <el-radio-group v-model="currentAnswer" class="answer-options">
+                <el-radio 
+                  v-for="(option, index) in currentQuestion.options" 
+                  :key="index"
+                  :value="String.fromCharCode(65 + index)"
+                  class="answer-option"
+                >
+                  {{ String.fromCharCode(65 + index) }}. {{ option }}
+                </el-radio>
+              </el-radio-group>
+            </template>
+
+            <!-- 多选题 -->
+            <template v-else-if="currentQuestion.type === 2">
+              <el-checkbox-group v-model="currentAnswer" class="answer-options">
+                <el-checkbox 
+                  v-for="(option, index) in currentQuestion.options" 
+                  :key="index"
+                  :value="String.fromCharCode(65 + index)"
+                  class="answer-option"
+                >
+                  {{ String.fromCharCode(65 + index) }}. {{ option }}
+                </el-checkbox>
+              </el-checkbox-group>
+            </template>
+
+            <!-- 填空题、简答题 -->
+            <template v-else-if="currentQuestion.type === 3 || currentQuestion.type === 4">
+              <el-input
+                type="textarea"
+                v-model="currentAnswer"
+                :rows="8"
+                resize="vertical"
+                :placeholder="currentQuestion.type === 3 ? '请输入答案...' : '请输入您的答案...'"
+                class="answer-textarea"
+                @input="handleInput"
+              />
+              <div class="word-count">{{ currentAnswer.length }} 字</div>
+            </template>
+
+            <!-- 评分题 -->
+            <template v-else-if="currentQuestion.type === 5">
+              <div class="rating-container">
+                <el-rate
+                  v-model="currentAnswer"
+                  :max="10"
+                  show-score
+                  score-template="{value}分"
+                  class="answer-rate"
+                  @change="handleInput"
+                />
+                <div class="rating-description">
+                  请为该项打分（1-10分）
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- 底部操作按钮 -->
+        <div class="action-buttons">
           <el-button 
             v-if="!isLastQuestion"
             type="primary" 
             @click="goToNextQuestion"
-            :disabled="!userAnswer || loading"
+            class="next-button"
             :loading="loading"
-            size="large"
-            class="next-btn"
           >
-            下一题
+            下一题 <el-icon class="el-icon--right"><ArrowRight /></el-icon>
           </el-button>
-          
-          <div v-else class="final-actions">
-            <div class="final-submit-warning">
-              <el-icon><Warning /></el-icon>
-              <span>最后一题，请仔细检查后交卷</span>
-            </div>
-            <el-button 
-              type="danger" 
-              @click="submitFinalAnswer"
-              :disabled="!userAnswer || loading"
-              :loading="loading"
-              size="large"
-              class="final-submit-btn"
-            >
-              <el-icon><Check /></el-icon>
-              交卷
-            </el-button>
-          </div>
-        </div>
-      </section>
-
-      <!-- 答题导航 -->
-      <aside class="navigation-section">
-        <div class="nav-header">
-          <h3>答题进度</h3>
-          <el-progress 
-            :percentage="progress" 
-            :format="format => `${currentIndex + 1}/${totalQuestions}`"
-          />
-          <div class="progress-tip">
-            <el-icon><InfoFilled /></el-icon>
-            <span>考试模式，需按顺序答题</span>
-          </div>
-        </div>
-        <div class="question-list">
-          <el-tag
-            v-for="index in totalQuestions"
-            :key="index"
-            :type="getQuestionStatus(index - 1)"
-            class="question-tag disabled"
-            title="考试模式下不允许跳题"
+          <el-button
+            v-else
+            type="primary"
+            @click="submitFinalAnswer"
+            class="submit-button"
+            :loading="submitting"
           >
-            {{ index }}
-          </el-tag>
+            {{ submitting ? '正在交卷...' : '交卷' }} <el-icon class="el-icon--right"><Check /></el-icon>
+          </el-button>
         </div>
-      </aside>
-    </main>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Timer, Check, Warning, InfoFilled } from '@element-plus/icons-vue'
+import { Timer, Check, Warning, InfoFilled, Setting, ArrowRight } from '@element-plus/icons-vue'
 import { answerSessionApi } from '@/api/answerSession'
 import { answerRecordApi } from '@/api/answerRecord'
 
@@ -186,22 +144,93 @@ const router = useRouter()
 
 // 状态
 const sessionCode = ref('')
-const currentQuestion = ref(null)
+const examTitle = ref('')
+const currentQuestion = ref({})
 const currentIndex = ref(0)
 const totalQuestions = ref(0)
-const userAnswer = ref('')
-const userAnswerList = ref([]) // 存储所有答案，在交卷时统一提交
-const timeRemaining = ref(3600) // 默认1小时
+const userAnswerList = ref([])
+const remainingTime = ref(0)
 const timer = ref(null)
-const currentScore = ref(0)
 const loading = ref(false)
-const sessionStatus = ref(null)
-const completedCount = ref(0)
-const progress = ref(0)
-const questionList = ref([]) // 存储所有题目信息
+const submitting = ref(false) // 新增：提交状态
+const currentAnswer = ref('')
+const lastSaved = ref(false)
+const isPaused = ref(false)
+const isLeavingConfirmed = ref(false)  // 用于跟踪是否已确认离开
+const isExamCompleted = ref(false) // 新增：标记是否正常完成答题
+let confirmDialogVisible = false  // 用于防止重复显示确认对话框
 
 // 计算属性
 const isLastQuestion = computed(() => currentIndex.value === totalQuestions.value - 1)
+
+// 路由离开确认
+onBeforeRouteLeave(async (to) => {
+  // 如果已经确认过或已完成答题，直接离开
+  if (isLeavingConfirmed.value || isExamCompleted.value) {
+    return true
+  }
+
+  // 如果正在加载或者没有开始答题，直接离开
+  if (loading.value || !sessionCode.value) {
+    return true
+  }
+
+  // 如果确认对话框已经显示，不再重复显示
+  if (confirmDialogVisible) {
+    return false
+  }
+
+  try {
+    confirmDialogVisible = true
+    await ElMessageBox.confirm(
+      '您确定要离开答题页面吗？\n\n离开页面将自动放弃本次答题，答题记录将被标记为"已放弃"。\n\n点击"继续答题"返回答题页面\n点击"放弃答题"结束本次答题',
+      '确认离开答题',
+      {
+        confirmButtonText: '放弃答题',
+        cancelButtonText: '继续答题',
+        type: 'warning',
+        customClass: 'exam-leave-dialog',
+        showClose: false,
+        closeOnClickModal: false,
+        closeOnPressEscape: false,
+        distinguishCancelAndClose: true,
+        center: true,
+        beforeClose: async (action, instance, done) => {
+          if (action === 'confirm') {
+            try {
+              loading.value = true
+              // 调用放弃答题接口
+              await answerSessionApi.abandonSession(sessionCode.value)
+              ElMessage.success('已放弃本次答题')
+              isLeavingConfirmed.value = true
+              // 清理定时器
+              if (timer.value) {
+                clearInterval(timer.value)
+                timer.value = null
+              }
+              done()
+            } catch (error) {
+              console.error('放弃答题失败:', error)
+              ElMessage.error('放弃答题失败，请重试')
+              loading.value = false
+              return false
+            } finally {
+              loading.value = false
+            }
+          } else {
+            confirmDialogVisible = false
+            done()
+          }
+        }
+      }
+    )
+    return isLeavingConfirmed.value
+  } catch {
+    // 用户取消离开
+    confirmDialogVisible = false
+    return false
+  }
+})
 
 // 获取题型名称
 const getQuestionTypeName = (type) => {
@@ -215,13 +244,6 @@ const getQuestionTypeName = (type) => {
   return types[type] || '未知题型'
 }
 
-// 获取题目状态
-const getQuestionStatus = (index) => {
-  if (index === currentIndex.value) return 'primary'
-  if (userAnswerList.value[index] !== undefined && userAnswerList.value[index] !== null && userAnswerList.value[index] !== '') return 'success'
-  return 'info'
-}
-
 // 格式化时间
 const formatTime = (seconds) => {
   const minutes = Math.floor(seconds / 60)
@@ -229,74 +251,71 @@ const formatTime = (seconds) => {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
 }
 
-// 初始化答题会话
-const initExamSession = async () => {
+// 开始倒计时
+const startTimer = () => {
+  if (timer.value) {
+    clearInterval(timer.value)
+  }
+  
+  timer.value = setInterval(() => {
+    if (remainingTime.value > 0) {
+      remainingTime.value--
+      // 在最后5分钟提醒用户
+      if (remainingTime.value === 300) {
+        ElMessage.warning('剩余时间不足5分钟，请抓紧时间答题')
+      } else if (remainingTime.value === 60) {
+        ElMessage.warning('剩余时间不足1分钟！')
+      }
+    } else {
+      clearInterval(timer.value)
+      ElMessage.warning('考试时间已到，系统将自动提交')
+      finishExam()
+    }
+  }, 1000)
+}
+
+// 组件卸载前清除定时器
+onBeforeUnmount(() => {
+  if (timer.value) {
+    clearInterval(timer.value)
+  }
+})
+
+// 初始化考试
+const initExam = async () => {
   try {
     loading.value = true
     sessionCode.value = route.params.sessionCode
     
     // 获取会话状态
-    const sessionResponse = await answerSessionApi.getSessionStatus(sessionCode.value)
-    if (!sessionResponse?.data) {
+    const statusResponse = await answerSessionApi.getSessionDetail(sessionCode.value)
+    if (!statusResponse?.data) {
       throw new Error('获取会话状态失败')
     }
     
-    sessionStatus.value = sessionResponse.data
-    
+    const sessionDetail = statusResponse.data
     // 检查会话状态
-    const status = parseInt(sessionStatus.value.status)
-    if (status === 2) { // 已完成
+    if (sessionDetail.status === 2) {
       ElMessage.warning('该答题会话已完成')
       router.push('/start-answer')
       return
-    } else if (status === 3) { // 已超时
-      ElMessage.warning('该答题会话已超时')
-      router.push('/start-answer')
-      return
-    } else if (status === 4) { // 已放弃
-      ElMessage.warning('该答题会话已放弃')
-      router.push('/start-answer')
-      return
-    } else if (status === 5) { // 异常结束
-      ElMessage.warning('该答题会话异常结束')
-      router.push('/start-answer')
-      return
     }
-
-    // 设置题目总数和进度
-    totalQuestions.value = sessionStatus.value.totalQuestions || 0
-    currentIndex.value = sessionStatus.value.lastQuestionIndex || 0
-    completedCount.value = sessionStatus.value.completedCount || 0
-    timeRemaining.value = sessionStatus.value.remainingTime || 3600
     
-    // 初始化userAnswerList数组
-    userAnswerList.value = new Array(totalQuestions.value)
+    examTitle.value = sessionDetail.title
+    totalQuestions.value = sessionDetail.totalQuestions
+    remainingTime.value = sessionDetail.remainingTime || 3600 // 默认1小时
     
-    // 计算进度（基于已回答的题目数量）
-    const answeredCount = userAnswerList.value.filter(answer => 
-      answer !== undefined && answer !== null && answer !== ''
-    ).length
-    progress.value = Math.floor((answeredCount / totalQuestions.value) * 100) || 0
-
+    // 初始化答案列表
+    userAnswerList.value = new Array(totalQuestions.value).fill('')
+    
     // 启动计时器
     startTimer()
-
-    // 加载题目
-    try {
-      await loadQuestion()
-    } catch (loadError) {
-      // loadQuestion 内部已经处理了错误提示，这里不需要再处理
-    }
+    
+    // 加载第一题
+    await loadQuestion(0)
   } catch (error) {
-    console.error('初始化答题会话失败:', error)
-    // 优先使用后端返回的错误信息
-    if (error.response?.data?.message) {
-      ElMessage.error(error.response.data.message)
-    } else if (!navigator.onLine) {
-      ElMessage.error('网络连接异常，请检查网络后重试')
-    } else {
-      ElMessage.error('初始化答题会话失败，请重试')
-    }
+    console.error('初始化考试失败:', error)
+    ElMessage.error(error.message || '初始化考试失败')
     router.push('/start-answer')
   } finally {
     loading.value = false
@@ -304,66 +323,29 @@ const initExamSession = async () => {
 }
 
 // 加载题目
-const loadQuestion = async (showError = true) => {
+const loadQuestion = async (index) => {
   try {
-    if (currentIndex.value >= totalQuestions.value) {
-      ElMessage.success('所有题目已完成')
-      // 设置标志表示这是正常完成的跳转
-      window._examCompleted = true
-      await finishExam()
-      return
-    }
-
-    const response = await answerSessionApi.getQuestion(sessionCode.value, currentIndex.value)
+    const response = await answerSessionApi.getQuestion(sessionCode.value, index)
     if (!response?.data) {
       throw new Error('题目加载失败')
     }
-
-    currentQuestion.value = response.data
     
-    // 恢复之前保存的答案，或根据题型初始化答案
-    if (userAnswerList.value[currentIndex.value] !== undefined) {
-      userAnswer.value = userAnswerList.value[currentIndex.value]
-    } else {
-      userAnswer.value = Number(response.data.type) === 2 ? [] : ''
+    currentQuestion.value = {
+      ...response.data,
+      type: Number(response.data.type)
     }
     
-    // 保存题目信息
-    if (!questionList.value[currentIndex.value]) {
-      questionList.value[currentIndex.value] = {
-        ...response.data,
-        index: currentIndex.value
-      }
+    // 根据题型初始化答案
+    const questionType = Number(response.data.type)
+    if (questionType === 2) { // 多选题
+      currentAnswer.value = userAnswerList.value[index] || []
+    } else if (questionType === 5) { // 评分题
+      currentAnswer.value = userAnswerList.value[index] || 0
+    } else { // 其他题型
+      currentAnswer.value = userAnswerList.value[index] || ''
     }
   } catch (error) {
-    console.error('加载题目失败:', error)
-    
-    // 只有在showError为true时才显示错误提示
-    if (showError) {
-      // 按优先级处理错误
-      if (error.response?.data?.code === 6101) { // 题目不存在
-        ElMessage.error('题目不存在，返回开始页面')
-        router.push('/start-answer')
-      } else if (error.response?.data?.code === 6201) { // 会话不存在
-        ElMessage.error('答题会话已失效，请重新开始')
-        router.push('/start-answer')
-      } else if (error.response?.data?.code === 6108) { // 题目索引无效
-        ElMessage.warning('题目索引无效，可能已完成所有题目')
-        // 设置标志表示这是正常完成的跳转
-        window._examCompleted = true
-        await finishExam()
-        return
-      } else if (!navigator.onLine) {
-        ElMessage.error('网络连接异常，请检查网络后重试')
-      } else if (error.response?.data?.message) {
-        ElMessage.error(error.response.data.message)
-      } else {
-        ElMessage.error('加载题目失败，请重试')
-      }
-    }
-    
-    // 总是抛出错误，让调用方决定如何处理
-    throw error
+    ElMessage.error(error.message || '加载题目失败')
   }
 }
 
@@ -373,31 +355,31 @@ const validateAnswer = () => {
   
   switch (questionType) {
     case 1: // 单选题
-      if (!userAnswer.value || userAnswer.value === '') {
+      if (!currentAnswer.value || currentAnswer.value === '') {
         ElMessage.warning('请选择一个答案')
         return false
       }
       break
     case 2: // 多选题
-      if (!userAnswer.value || !Array.isArray(userAnswer.value) || userAnswer.value.length === 0) {
+      if (!currentAnswer.value || !Array.isArray(currentAnswer.value) || currentAnswer.value.length === 0) {
         ElMessage.warning('请至少选择一个答案')
         return false
       }
       break
     case 3: // 填空题
-      if (!userAnswer.value || userAnswer.value.trim() === '') {
+      if (!currentAnswer.value || currentAnswer.value.trim() === '') {
         ElMessage.warning('请填写答案')
         return false
       }
       break
     case 4: // 简答题
-      if (!userAnswer.value || userAnswer.value.trim() === '') {
+      if (!currentAnswer.value || currentAnswer.value.trim() === '') {
         ElMessage.warning('请输入答案')
         return false
       }
       break
     case 5: // 评分题
-      if (!userAnswer.value || userAnswer.value === 0) {
+      if (!currentAnswer.value || currentAnswer.value === 0) {
         ElMessage.warning('请进行评分')
         return false
       }
@@ -409,19 +391,50 @@ const validateAnswer = () => {
   return true
 }
 
-// 保存当前答案并跳转到下一题
-const goToNextQuestion = () => {
-  // 验证答案
-  if (!validateAnswer()) {
-    return
+// 保存当前答案
+const saveCurrentAnswer = () => {
+  if (currentQuestion.value && currentAnswer.value !== undefined) {
+    userAnswerList.value[currentIndex.value] = currentAnswer.value
+    lastSaved.value = true
+    // 3秒后重置保存状态
+    setTimeout(() => {
+      lastSaved.value = false
+    }, 3000)
   }
+}
 
-  // 保存当前答案到本地
-  saveCurrentAnswer()
+// 下一题
+const goToNextQuestion = async () => {
+  try {
+    if (currentIndex.value < totalQuestions.value - 1) {
+      // 保存当前答案
+      saveCurrentAnswer()
+      // 切换到下一题
+      currentIndex.value++
+      await loadQuestion(currentIndex.value)
+    } else {
+      // 如果是最后一题，提示用户是否要交卷
+      const confirmed = await ElMessageBox.confirm(
+        '恭喜！您已完成所有题目。\n\n是否现在提交答卷？\n\n您也可以选择继续检查答案。',
+        '完成答题',
+        {
+          confirmButtonText: '立即交卷',
+          cancelButtonText: '继续检查',
+          type: 'success',
+          customClass: 'exam-complete-dialog',
+          center: true,
+          distinguishCancelAndClose: true
+        }
+      ).catch(() => false)
 
-  // 跳转到下一题
-  currentIndex.value++
-  loadQuestion(false)
+      if (confirmed) {
+        await submitFinalAnswer()
+      }
+    }
+  } catch (error) {
+    console.error('切换题目失败:', error)
+    ElMessage.error('切换题目失败，请重试')
+  }
 }
 
 // 统一提交所有答案
@@ -431,10 +444,22 @@ const submitAllAnswers = async () => {
   try {
     const answers = []
     
+    // 显示提交中的加载提示
+    ElMessage({
+      type: 'info',
+      message: '正在提交答案，请稍候...',
+      duration: 0,
+      showClose: true
+    })
+    
     // 收集所有答案
     for (let i = 0; i < userAnswerList.value.length; i++) {
       const answer = userAnswerList.value[i]
-      const question = questionList.value[i]
+      // 获取当前题目
+      const response = await answerSessionApi.getQuestion(sessionCode.value, i)
+      if (!response?.data) continue
+      
+      const question = response.data
       
       if (answer !== undefined && answer !== null && answer !== '' && question) {
         let processedAnswer
@@ -470,12 +495,19 @@ const submitAllAnswers = async () => {
         answers
       })
       console.log('所有答案提交成功')
-      ElMessage.success('答案提交成功')
+      // 关闭提交中提示
+      ElMessage.closeAll()
+      ElMessage.success({
+        message: `答案提交成功，共提交${answers.length}道题目`,
+        duration: 2000
+      })
     } else {
       throw new Error('没有可提交的答案')
     }
   } catch (error) {
     console.error('答案提交失败:', error)
+    // 关闭提交中提示
+    ElMessage.closeAll()
     throw error
   }
 }
@@ -505,12 +537,15 @@ const submitFinalAnswer = async () => {
   try {
     // 确认提交
     await ElMessageBox.confirm(
-      '确认要交卷吗？提交后将无法修改答案。',
+      '确认要交卷吗？\n\n提交后将无法修改答案，系统将自动评分并生成答题记录。\n\n请确认您已完成所有题目的作答。',
       '提交确认',
       {
         confirmButtonText: '确认交卷',
         cancelButtonText: '继续答题',
-        type: 'warning'
+        type: 'info',
+        customClass: 'exam-submit-dialog',
+        center: true,
+        distinguishCancelAndClose: true
       }
     )
   } catch {
@@ -519,7 +554,7 @@ const submitFinalAnswer = async () => {
   }
 
   try {
-    loading.value = true
+    submitting.value = true
     
     // 保存最后一题答案
     saveCurrentAnswer()
@@ -534,64 +569,23 @@ const submitFinalAnswer = async () => {
     // 如果是重复提交错误，继续完成考试流程
     if (handleSubmitError(error)) {
       await finishExam()
+    } else {
+      // 显示错误提示，允许用户重试
+      ElMessageBox.alert(
+        '提交答案失败，请检查网络连接后重试。\n\n您的答案已保存，可以继续尝试提交。',
+        '提交失败',
+        {
+          confirmButtonText: '知道了',
+          type: 'error',
+          center: true,
+          showClose: false
+        }
+      )
     }
   } finally {
-    loading.value = false
+    submitting.value = false
   }
 }
-
-// 保存当前题目答案到本地
-const saveCurrentAnswer = () => {
-  if (!currentQuestion.value) return
-  
-  // 保存答案和题目信息
-  userAnswerList.value[currentIndex.value] = userAnswer.value
-  
-  // 如果题目列表中还没有这个题目，添加进去
-  if (!questionList.value[currentIndex.value]) {
-    questionList.value[currentIndex.value] = {
-      ...currentQuestion.value,
-      index: currentIndex.value
-    }
-  }
-  
-  console.log(`已保存第${currentIndex.value + 1}题答案:`, userAnswer.value)
-}
-
-// 计时器
-const startTimer = () => {
-  // 清除可能存在的旧计时器
-  if (timer.value) {
-    clearInterval(timer.value)
-  }
-
-  timer.value = setInterval(() => {
-    if (timeRemaining.value > 0) {
-      timeRemaining.value--
-      
-      // 在最后5分钟提醒用户
-      if (timeRemaining.value === 300) { // 5分钟
-        ElMessage.warning('剩余时间不足5分钟，请抓紧时间答题')
-      } else if (timeRemaining.value === 60) { // 1分钟
-        ElMessage.error('剩余时间不足1分钟！')
-      }
-    } else {
-      clearInterval(timer.value)
-      ElMessage.error('考试时间已到，系统将自动提交')
-      // 设置标志表示这是超时自动完成的跳转
-      window._examCompleted = true
-      finishExam()
-    }
-  }, 1000)
-}
-
-// 清理计时器
-onBeforeUnmount(() => {
-  if (timer.value) {
-    clearInterval(timer.value)
-    timer.value = null
-  }
-})
 
 // 完成答题
 const finishExam = async () => {
@@ -603,414 +597,326 @@ const finishExam = async () => {
     }
     
     // 调用后端完成答题会话
-    const result = await answerSessionApi.finishSession(sessionCode.value)
+    await answerSessionApi.finishSession(sessionCode.value)
+    
+    // 标记为已完成
+    isExamCompleted.value = true
     
     // 显示完成信息
-    ElMessage.success('交卷成功')
+    ElMessage.success({
+      message: '交卷成功！',
+      duration: 1500
+    })
     
-    // 设置标志表示这是正常完成的跳转，避免触发路由守卫的确认对话框
-    window._examCompleted = true
-    
-    // 等待一秒让用户看到完成提示，然后回到开始答题页面
-    setTimeout(() => {
-      router.push('/start-answer')
-    }, 1500)
+    // 直接跳转到开始答题页面
+    router.push('/start-answer')
     
   } catch (error) {
     console.error('完成答题失败:', error)
-    handleSubmitError(error)
+    // 显示错误提示，但保持在当前页面
+    ElMessage.error({
+      message: error.message || '完成答题失败，请重试',
+      duration: 3000
+    })
+    // 重新启动计时器，因为还没完成
+    startTimer()
   }
 }
 
 // 计算答题用时
 const calculateTimeSpent = () => {
-  return Math.floor(3600 - timeRemaining.value)
+  return Math.floor(3600 - remainingTime.value)
 }
 
-// 跳转到指定题目（考试模式下已禁用）
-// const jumpToQuestion = (index) => {
-//   // 考试模式下不允许跳题，此方法已禁用
-// }
+// 检查题目是否已回答
+const isQuestionAnswered = (index) => {
+  return userAnswerList.value[index] !== undefined && 
+         userAnswerList.value[index] !== null && 
+         userAnswerList.value[index] !== ''
+}
+
+// 跳转到指定题目
+const jumpToQuestion = async (index) => {
+  if (index === currentIndex.value) return
+  
+  // 保存当前答案
+  saveCurrentAnswer()
+  
+  // 更新索引并加载新题目
+  currentIndex.value = index
+  await loadQuestion(index)
+}
+
+// 处理输入
+const handleInput = () => {
+  // 自动保存
+  saveCurrentAnswer()
+}
 
 // 监听答案变化，实时保存
-watch(userAnswer, (newAnswer) => {
-  if (currentQuestion.value && (newAnswer !== '' && newAnswer !== null && newAnswer !== undefined)) {
-    // 实时保存答案
+watch(currentAnswer, (newAnswer) => {
+  if (currentQuestion.value && newAnswer !== undefined) {
     userAnswerList.value[currentIndex.value] = newAnswer
-    
-    // 保存题目信息
-    if (!questionList.value[currentIndex.value]) {
-      questionList.value[currentIndex.value] = {
-        ...currentQuestion.value,
-        index: currentIndex.value
-      }
-    }
-    
-    // 更新进度
-    const answeredCount = userAnswerList.value.filter(answer => 
-      answer !== undefined && answer !== null && answer !== ''
-    ).length
-    progress.value = Math.floor((answeredCount / totalQuestions.value) * 100) || 0
   }
 }, { deep: true })
 
 // 生命周期钩子
 onMounted(() => {
-  initExamSession()
+  initExam()
 })
+
+// 暂停/继续答题
+const togglePause = () => {
+  isPaused.value = !isPaused.value
+  if (isPaused.value) {
+    clearInterval(timer.value)
+    ElMessage.info('已暂停计时')
+  } else {
+    startTimer()
+    ElMessage.success('已继续计时')
+  }
+}
 </script>
 
 <style scoped>
-.exam-page {
-  min-height: 100vh;
-  background: #f5f7fa;
+.answer-question-container {
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--el-fill-color-blank);
 }
 
-.exam-header {
-  background: #fff;
-  padding: 20px 30px;
-  border-bottom: 1px solid #e4e7ed;
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  padding: 0 20px;
+  background-color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  justify-content: space-between;
+  z-index: 100;
 }
 
-.exam-info {
-  flex: 1;
+.toolbar-left {
+  display: flex;
+  align-items: center;
 }
 
 .exam-title {
-  margin: 0 0 10px 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.exam-meta {
-  display: flex;
-  gap: 20px;
-  color: #606266;
-  font-size: 14px;
-}
-
-.exam-status {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.timer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: #f0f9ff;
-  border-radius: 8px;
-  color: #409EFF;
-  font-weight: 600;
-}
-
-.timer.warning {
-  background: #fef0f0;
-  color: #f56c6c;
-}
-
-.score-info {
   font-size: 16px;
-  font-weight: 600;
-  color: #67C23A;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
 }
 
-.exam-main {
-  flex: 1;
-  display: flex;
-  gap: 20px;
-  padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.question-section {
-  flex: 1;
-  background: #fff;
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.question-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #e4e7ed;
-}
-
-.question-type {
+.toolbar-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
 }
 
-.type-name {
-  background: #409EFF;
-  color: #fff;
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 12px;
+.function-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--el-color-primary-light-9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.function-button:hover {
+  background: var(--el-color-primary-light-7);
+  transform: translateY(-1px);
+}
+
+.remaining-time {
+  font-size: 14px;
+  color: var(--el-color-danger);
   font-weight: 500;
 }
 
-.score {
-  color: #67C23A;
-  font-weight: 600;
+.question-number {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.main-content {
+  flex: 1;
+  padding: 80px 0 24px;
+  overflow-y: auto;
+  background-color: var(--el-fill-color-light);
+}
+
+.question-card {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.question-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--el-border-color-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.question-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.score-tag {
+  background-color: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.question-type {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.progress-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-bar {
+  width: 120px;
+  height: 4px;
+  background-color: var(--el-fill-color-light);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-inner {
+  height: 100%;
+  background-color: var(--el-color-primary);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  min-width: 45px;
+  text-align: right;
 }
 
 .question-content {
-  margin-bottom: 30px;
+  padding: 20px;
 }
 
-.title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-  margin-bottom: 15px;
-  line-height: 1.6;
-}
-
-.description {
-  color: #606266;
+.question-title {
+  font-size: 15px;
+  color: var(--el-text-color-primary);
+  margin-bottom: 24px;
   line-height: 1.6;
 }
 
 .answer-area {
-  margin-bottom: 30px;
+  padding: 0;
 }
 
-.choice-options {
+.answer-options {
   display: flex;
   flex-direction: column;
+  width: 100%;
   gap: 12px;
 }
 
-.option-item {
+.answer-option {
+  margin: 0;
   padding: 12px 16px;
-  border: 1px solid #e4e7ed;
   border-radius: 8px;
+  background-color: var(--el-fill-color-light);
   transition: all 0.3s;
-}
-
-.option-item:hover {
-  border-color: #409EFF;
-  background: #f0f9ff;
-}
-
-.question-actions {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
-
-.next-btn {
-  padding: 12px 30px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.final-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.final-submit-warning {
+  height: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: #fef0f0;
-  border: 1px solid #fcd0d0;
-  border-radius: 8px;
-  color: #f56c6c;
+  cursor: pointer;
+}
+
+.answer-option:hover {
+  background-color: var(--el-fill-color-dark);
+}
+
+:deep(.el-radio) {
+  width: 100%;
+  margin-right: 0;
+  margin-bottom: 0;
+  height: auto;
+}
+
+:deep(.el-radio__label) {
+  padding-left: 12px;
   font-size: 14px;
-  font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
-.final-submit-warning .el-icon {
-  font-size: 16px;
+:deep(.el-radio__input) {
+  position: absolute;
+  right: 16px;
 }
 
-.navigation-section {
-  width: 300px;
-  background: #fff;
-  border-radius: 12px;
+.word-count {
+  text-align: right;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  padding-right: 4px;
+}
+
+.action-buttons {
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.nav-header {
-  margin-bottom: 20px;
-}
-
-.nav-header h3 {
-  margin: 0 0 15px 0;
-  color: #303133;
-  font-size: 16px;
-}
-
-.progress-tip {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 10px;
-  padding: 8px 12px;
-  background: #f0f9ff;
-  border-radius: 6px;
-  font-size: 12px;
-  color: #606266;
-}
-
-.progress-tip .el-icon {
-  font-size: 14px;
-  color: #409EFF;
-}
-
-.question-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.question-tag {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  transition: all 0.3s;
+  gap: 16px;
+  border-top: 1px solid var(--el-border-color-light);
 }
 
-.question-tag.disabled {
-  cursor: not-allowed;
-  opacity: 0.8;
+.next-button,
+.submit-button {
+  min-width: 120px;
 }
 
-.question-tag.disabled:hover {
-  transform: none;
-}
-
-.rating-section {
-  margin-bottom: 30px;
+:deep(.el-icon) {
+  font-size: 16px;
 }
 
 .rating-container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 16px;
+  padding: 20px;
 }
 
-.rating-input {
-  margin-bottom: 10px;
+.answer-rate {
+  font-size: 24px;
 }
 
-.rating-hint {
-  color: #606266;
+.rating-description {
+  color: var(--el-text-color-secondary);
   font-size: 14px;
-  text-align: center;
 }
 
-.final-submit-btn {
-  background: #f56c6c;
-  border: 2px solid #f56c6c;
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  padding: 15px 40px;
-  border-radius: 8px;
-  letter-spacing: 2px;
-  box-shadow: 0 4px 12px rgba(245, 108, 108, 0.3);
-  transition: all 0.2s ease;
-  text-transform: uppercase;
-}
-
-.final-submit-btn:hover {
-  background: #f78989;
-  border-color: #f78989;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(245, 108, 108, 0.4);
-}
-
-.final-submit-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(245, 108, 108, 0.3);
-}
-
-/* 交卷确认对话框样式 */
-:deep(.exam-submit-dialog) {
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-}
-
-:deep(.exam-submit-dialog .el-message-box__header) {
-  padding: 25px 25px 15px;
-  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-  color: #fff;
-  border-radius: 12px 12px 0 0;
-}
-
-:deep(.exam-submit-dialog .el-message-box__title) {
-  color: #fff;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-
-:deep(.exam-submit-dialog .el-message-box__content) {
-  padding: 30px 25px 20px;
-  background: #fff;
-}
-
-:deep(.exam-submit-dialog .el-message-box__message) {
+:deep(.el-rate__text) {
   font-size: 16px;
-  line-height: 1.8;
-  color: #333;
-  text-align: center;
-  margin: 0;
-  white-space: pre-line;
-}
-
-:deep(.exam-submit-dialog .el-message-box__btns) {
-  padding: 20px 25px 25px;
-  background: #fff;
-  border-radius: 0 0 12px 12px;
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-}
-
-:deep(.exam-submit-dialog .el-button--primary) {
-  background: #ff6b6b;
-  border-color: #ff6b6b;
-  padding: 12px 25px;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  border-radius: 6px;
-}
-
-:deep(.exam-submit-dialog .el-button--default) {
-  padding: 12px 25px;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  border-radius: 6px;
-  border: 2px solid #ddd;
+  color: var(--el-color-primary);
+  margin-left: 10px;
 }
 </style>
 

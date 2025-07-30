@@ -465,9 +465,7 @@ const getTimeClass = (remainingTime) => {
   return 'normal'
 }
 
-const formatDateTime = (dateStr) => {
-  return new Date(dateStr).toLocaleString('zh-CN')
-}
+import { formatDateTime } from '@/utils/format'
 
 const formatRemainingTime = (seconds) => {
   if (seconds <= 0) return '已超时'
@@ -861,26 +859,6 @@ const updateSessionStatus = (row) => {
   console.log('更新会话状态:', row)
 }
 
-const deleteSession = async (row) => {
-  try {
-    await SimplePremiumDialog.confirm(
-      `确定要删除会话 ${row.sessionCode} 吗？\n\n🗑️ 此操作不可恢复！`,
-      '🗑️ 确认删除会话',
-      {
-        confirmButtonText: '确认删除',
-        cancelButtonText: '取消',
-        type: 'error'
-      }
-    )
-    // 执行删除操作
-    console.log('删除会话:', row)
-    ElMessage.success('删除成功')
-    await loadSessions()
-  } catch (error) {
-    console.log('取消删除')
-  }
-}
-
 const formatTime = (time) => {
   if (!time) return '-'
   return new Date(time).toLocaleString('zh-CN')
@@ -891,69 +869,6 @@ const formatDuration = (duration) => {
   const minutes = Math.floor(duration / 60)
   const seconds = duration % 60
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
-}
-
-const refreshData = async () => {
-  await Promise.all([
-    loadSessions(),
-    loadRealTimeStats()
-  ])
-}
-
-const batchUpdateStatus = async (status) => {
-  if (selectedSessions.value.length === 0) {
-    ElMessage.warning('请先选择要操作的会话')
-    return
-  }
-  
-  try {
-    await SimplePremiumDialog.confirm(
-      `确定要将选中的 ${selectedSessions.value.length} 个会话状态更新为 ${getStatusText(status)} 吗？\n\n📊 此操作将同时影响多个会话`,
-      '📊 批量操作确认',
-      {
-        confirmButtonText: '确认更新',
-        cancelButtonText: '取消',
-        type: 'info'
-      }
-    )
-    
-    // 执行批量更新
-    console.log('批量更新状态:', status, selectedSessions.value)
-    ElMessage.success('批量操作成功')
-    await loadSessions()
-  } catch (error) {
-    console.log('取消批量操作')
-  }
-}
-
-const batchDelete = async () => {
-  if (selectedSessions.value.length === 0) {
-    ElMessage.warning('请先选择要删除的会话')
-    return
-  }
-  
-  try {
-    await SimplePremiumDialog.confirm(
-      `确定要删除选中的 ${selectedSessions.value.length} 个会话吗？\n\n🗑️ 此操作不可恢复！`,
-      '🗑️ 批量删除确认',
-      {
-        confirmButtonText: '确认删除',
-        cancelButtonText: '取消',
-        type: 'error'
-      }
-    )
-    
-    // 执行批量删除
-    console.log('批量删除:', selectedSessions.value)
-    ElMessage.success('批量删除成功')
-    await loadSessions()
-  } catch (error) {
-    console.log('取消批量删除')
-  }
-}
-
-const handleTimeoutSessions = () => {
-  console.log('处理超时会话')
 }
 </script>
 

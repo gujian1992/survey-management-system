@@ -11,7 +11,7 @@
   margin-right: 0;
 }
 
-.el-checkbox__input.is-checked + .el-checkbox__label {
+.el-checkbox__input.is-checked+.el-checkbox__label {
   color: var(--el-text-color-primary);
 }
 
@@ -92,7 +92,7 @@
   font-weight: var(--font-semibold);
 }
 
-.el-table tr:hover > td {
+.el-table tr:hover>td {
   background: var(--color-primary-50);
 }
 
@@ -101,4 +101,251 @@
   border-radius: var(--radius-lg);
   border: none;
   font-weight: var(--font-medium);
-} 
+}
+
+/* 消息框样式增强 */
+.el-message-box {
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-2xl);
+  border: none;
+}
+
+.el-message-box__header {
+  padding: var(--spacing-xl) var(--spacing-2xl);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.el-message-box__title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--el-text-color-primary);
+}
+
+.el-message-box__content {
+  padding: var(--spacing-xl) var(--spacing-2xl);
+}
+
+.el-message-box__message {
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--el-text-color-regular);
+  margin: 0;
+}
+
+.el-message-box__btns {
+  padding: var(--spacing-lg) var(--spacing-2xl) var(--spacing-xl);
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+}
+
+.el-message-box__btns .el-button {
+  min-width: 100px;
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-medium);
+  transition: var(--transition-normal);
+}
+
+.el-message-box__btns .el-button--primary {
+  background: var(--gradient-primary);
+  border: none;
+}
+
+.el-message-box__btns .el-button--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.el-message-box__btns .el-button--default:hover {
+  background: var(--color-gray-100);
+  transform: translateY(-1px);
+}
+
+/* 答题离开确认对话框专用样式 */
+.exam-leave-dialog {
+  max-width: 460px;
+  width: 90vw;
+}
+
+.exam-leave-dialog .el-message-box__header {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  border-bottom: none;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+}
+
+.exam-leave-dialog .el-message-box__title {
+  color: var(--color-white);
+  text-align: center;
+}
+
+.exam-leave-dialog .el-message-box__headerbtn {
+  display: none;
+}
+
+.exam-leave-dialog .el-message-box__content {
+  padding: var(--spacing-2xl);
+  text-align: center;
+}
+
+.exam-leave-dialog .el-message-box__message {
+  white-space: pre-line;
+  font-size: var(--text-base);
+  line-height: 1.8;
+  color: var(--el-text-color-primary);
+  margin: 0;
+}
+
+.exam-leave-dialog .el-message-box__btns {
+  padding: 0 var(--spacing-2xl) var(--spacing-2xl);
+  gap: var(--spacing-lg);
+}
+
+.exam-leave-dialog .el-message-box__btns .el-button {
+  min-width: 120px;
+  padding: 12px 24px;
+  font-size: var(--text-base);
+}
+
+.exam-leave-dialog .el-message-box__btns .el-button--primary {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  border: none;
+  color: var(--color-white);
+}
+
+.exam-leave-dialog .el-message-box__btns .el-button--default {
+  background: var(--color-white);
+  border: 2px solid var(--color-gray-300);
+  color: var(--el-text-color-primary);
+}
+
+.exam-leave-dialog .el-message-box__btns .el-button--default:hover {
+  border-color: var(--el-color-primary);
+  color: var(--el-color-primary);
+  background: var(--color-primary-50);
+}
+
+/* 交卷确认对话框专用样式 */
+.exam-submit-dialog {
+  max-width: 460px;
+  width: 90vw;
+}
+
+.exam-submit-dialog .el-message-box__header {
+  background: linear-gradient(135deg, #409eff, #337ecc);
+  border-bottom: none;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+}
+
+.exam-submit-dialog .el-message-box__title {
+  color: var(--color-white);
+  text-align: center;
+}
+
+.exam-submit-dialog .el-message-box__headerbtn {
+  display: none;
+}
+
+.exam-submit-dialog .el-message-box__content {
+  padding: var(--spacing-2xl);
+  text-align: center;
+}
+
+.exam-submit-dialog .el-message-box__message {
+  white-space: pre-line;
+  font-size: var(--text-base);
+  line-height: 1.8;
+  color: var(--el-text-color-primary);
+  margin: 0;
+}
+
+.exam-submit-dialog .el-message-box__btns {
+  padding: 0 var(--spacing-2xl) var(--spacing-2xl);
+  gap: var(--spacing-lg);
+}
+
+.exam-submit-dialog .el-message-box__btns .el-button {
+  min-width: 120px;
+  padding: 12px 24px;
+  font-size: var(--text-base);
+}
+
+.exam-submit-dialog .el-message-box__btns .el-button--primary {
+  background: linear-gradient(135deg, #409eff, #337ecc);
+  border: none;
+  color: var(--color-white);
+}
+
+.exam-submit-dialog .el-message-box__btns .el-button--default {
+  background: var(--color-white);
+  border: 2px solid var(--color-gray-300);
+  color: var(--el-text-color-primary);
+}
+
+.exam-submit-dialog .el-message-box__btns .el-button--default:hover {
+  border-color: var(--el-color-primary);
+  color: var(--el-color-primary);
+  background: var(--color-primary-50);
+}
+
+/* 完成答题对话框专用样式 */
+.exam-complete-dialog {
+  max-width: 460px;
+  width: 90vw;
+}
+
+.exam-complete-dialog .el-message-box__header {
+  background: linear-gradient(135deg, #67c23a, #529b2e);
+  border-bottom: none;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+}
+
+.exam-complete-dialog .el-message-box__title {
+  color: var(--color-white);
+  text-align: center;
+}
+
+.exam-complete-dialog .el-message-box__headerbtn {
+  display: none;
+}
+
+.exam-complete-dialog .el-message-box__content {
+  padding: var(--spacing-2xl);
+  text-align: center;
+}
+
+.exam-complete-dialog .el-message-box__message {
+  white-space: pre-line;
+  font-size: var(--text-base);
+  line-height: 1.8;
+  color: var(--el-text-color-primary);
+  margin: 0;
+}
+
+.exam-complete-dialog .el-message-box__btns {
+  padding: 0 var(--spacing-2xl) var(--spacing-2xl);
+  gap: var(--spacing-lg);
+}
+
+.exam-complete-dialog .el-message-box__btns .el-button {
+  min-width: 120px;
+  padding: 12px 24px;
+  font-size: var(--text-base);
+}
+
+.exam-complete-dialog .el-message-box__btns .el-button--primary {
+  background: linear-gradient(135deg, #67c23a, #529b2e);
+  border: none;
+  color: var(--color-white);
+}
+
+.exam-complete-dialog .el-message-box__btns .el-button--default {
+  background: var(--color-white);
+  border: 2px solid var(--color-gray-300);
+  color: var(--el-text-color-primary);
+}
+
+.exam-complete-dialog .el-message-box__btns .el-button--default:hover {
+  border-color: var(--el-color-success);
+  color: var(--el-color-success);
+  background: var(--el-color-success-light-9);
+}

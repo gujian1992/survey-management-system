@@ -67,6 +67,7 @@ public class ScoringServiceImpl extends ServiceImpl<ScoringRecordMapper, Scoring
         scoringRecord.setQuestionId(answerRecord.getQuestionId());
         scoringRecord.setScorerId(scorerId);
         scoringRecord.setScore(scoringDTO.getScore());
+        scoringRecord.setMaxScore(scoringDTO.getMaxScore());
         scoringRecord.setComment(scoringDTO.getComment());
         scoringRecord.setScoringTime(LocalDateTime.now());
         

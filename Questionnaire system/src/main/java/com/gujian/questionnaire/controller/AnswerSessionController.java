@@ -25,13 +25,13 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/answer-session")
 public class AnswerSessionController {
-    
+
     @Autowired
     private AnswerSessionService answerSessionService;
-    
+
     @Autowired
     private AnswerRecordService answerRecordService;
-    
+
     @Autowired
     private UserContextUtils userContextUtils;
 
@@ -140,7 +140,8 @@ public class AnswerSessionController {
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime) {
         try {
-            IPage<AnswerSession> page = answerSessionService.getAllSessionPage(current, size, userName, status, startTime, endTime);
+            IPage<AnswerSession> page = answerSessionService.getAllSessionPage(current, size, userName, status,
+                    startTime, endTime);
             return Result.success(page);
         } catch (BusinessException e) {
             return Result.error(e.getErrorCode(), e.getMessage());
@@ -163,12 +164,12 @@ public class AnswerSessionController {
 
     // 移除会话进度更新接口，改为前端计算
     // /**
-    //  * 更新会话进度
-    //  */
+    // * 更新会话进度
+    // */
     // @PostMapping("/{sessionId}/update-progress")
     // @Operation(summary = "更新会话进度")
     // public Result<Boolean> updateSessionProgress(@PathVariable Long sessionId) {
-    //     // 改为前端计算进度，无需后端接口
+    // // 改为前端计算进度，无需后端接口
     // }
 
     /**
@@ -195,6 +196,20 @@ public class AnswerSessionController {
             AnswerSession session = answerSessionService.getSessionByCode(sessionCode);
             List<AnswerRecord> records = answerRecordService.getSessionRecords(session.getId());
             return Result.success(records);
+        } catch (BusinessException e) {
+            return Result.error(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    /**
+     * 获取会话详情
+     */
+    @GetMapping("/detail/{sessionCode}")
+    @Operation(summary = "获取会话详情")
+    public Result<AnswerSession> getSessionDetail(@PathVariable String sessionCode) {
+        try {
+            AnswerSession session = answerSessionService.getSessionByCode(sessionCode);
+            return Result.success(session);
         } catch (BusinessException e) {
             return Result.error(e.getErrorCode(), e.getMessage());
         }
@@ -233,25 +248,25 @@ public class AnswerSessionController {
 
     // 移除复杂的状态管理接口
     // /**
-    //  * 发送心跳保活 - 移除心跳机制
-    //  */
+    // * 发送心跳保活 - 移除心跳机制
+    // */
     // @PostMapping("/{sessionId}/heartbeat")
     // @Operation(summary = "发送心跳保活")
     // public Result<Map<String, Object>> sendHeartbeat(
-    //         @PathVariable Integer sessionId,
-    //         @RequestBody Map<String, Object> data) {
-    //     // 移除心跳机制，简化状态管理
+    // @PathVariable Integer sessionId,
+    // @RequestBody Map<String, Object> data) {
+    // // 移除心跳机制，简化状态管理
     // }
 
     // /**
-    //  * 标记会话异常退出 - 简化异常处理
-    //  */
+    // * 标记会话异常退出 - 简化异常处理
+    // */
     // @PostMapping("/{sessionId}/mark-abnormal-exit")
     // @Operation(summary = "标记会话异常退出")
     // public Result<Void> markAbnormalExit(
-    //         @PathVariable Integer sessionId,
-    //         @RequestBody Map<String, Object> data) {
-    //     // 简化异常处理逻辑
+    // @PathVariable Integer sessionId,
+    // @RequestBody Map<String, Object> data) {
+    // // 简化异常处理逻辑
     // }
 
     /**
@@ -267,4 +282,4 @@ public class AnswerSessionController {
             return Result.error(e.getErrorCode(), e.getMessage());
         }
     }
-} 
+}

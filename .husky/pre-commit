@@ -1,0 +1,22 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# 检查是否有修改记录
+if [ ! -f "MODIFICATION_RECORD.md" ]; then
+  echo "错误: 没有找到修改记录文件 (MODIFICATION_RECORD.md)"
+  echo "请按照 CODE_MODIFICATION_RULES.md 的规范记录修改"
+  exit 1
+fi
+
+# 检查最近的修改记录是否符合规范
+if ! grep -q "## $(date +%Y-%m-%d)" "MODIFICATION_RECORD.md"; then
+  echo "错误: 今天的修改记录未更新"
+  echo "请按照 CODE_MODIFICATION_RULES.md 的规范更新修改记录"
+  exit 1
+fi
+
+# 运行测试
+npm test
+
+# 检查代码格式
+npm run lint 

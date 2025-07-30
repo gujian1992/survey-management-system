@@ -1,0 +1,1 @@
+ALTER TABLE scoring_record CHANGE feedback comment TEXT COMMENT '评分反馈'; 

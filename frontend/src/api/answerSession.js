@@ -124,7 +124,7 @@ export const answerSessionApi = {
    */
   getSessionDetail(sessionCode) {
     return request({
-      url: `${BASE_URL}/detail/${sessionCode}`,
+      url: `${BASE_URL}/${sessionCode}/status`,
       method: 'get'
     })
   },
